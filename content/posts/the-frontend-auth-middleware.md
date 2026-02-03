@@ -1,6 +1,6 @@
 +++
 title = "The Frontend Auth Middleware: Cross-Origin Iframes Without Third-Party Cookies"
-description = ""
+description = "A service-worker bootloader pattern for cross-origin iframe auth without third-party cookies."
 date = 2025-12-25
 
 [extra]

@@ -1,6 +1,6 @@
 +++
 title = "Gave My RGB Fans a Job: 38-Pixel Screen Mirror"
-description = ""
+description = "Using a custom LED map to mirror screen colors across RGB fans, RAM, and pump lighting."
 date = 2025-12-24
 
 [extra]
