@@ -1,6 +1,6 @@
 +++
 title = "Hijacking Chrome's Network Tab to Debug an Electron App"
-description = ""
+description = "Proxying native Electron FFI calls into DevTools."
 date = 2025-12-26
 
 [extra]

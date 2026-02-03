@@ -1,6 +1,6 @@
 +++
 title = "Making macOS Bearable"
-description = ""
+description = "My workflow on macOS with Aerospace, Tmux, and keyboard-first navigation."
 date = 2025-12-09
 
 [extra]
@@ -102,4 +102,4 @@ I recently added Homerow to the mix, which brings this same "look and type" navi
 
 By layering Aerospace, Tmux, and modal editing, I’ve tried to replicate that "extension of the body" feeling. The goal isn't to be a "power user" for the sake of it. The goal is to remove the lag between thinking "I want to do X" and the computer actually doing it.
 
-The [dotfiles](https://github.com/seg6/dotfiles/tree/macbook) and the relevant [Hacker News](https://news.ycombinator.com/item?id=46213385) discussion.
+The [dotfiles](https://github.com/seg6/dotfiles) and the relevant [Hacker News](https://news.ycombinator.com/item?id=46213385) discussion.
