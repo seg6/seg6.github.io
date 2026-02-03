@@ -21,10 +21,6 @@ recent_more_text = ""
 date_format = "%b %-d, %Y"
 +++
 
-Hi! I'm a software engineer based in Berlin.
-
-I work across the stack—from systems programming in Rust and C to web development and cloud infrastructure. Currently building things at Meyer Sound.
-
-This is where I write about whatever catches my interest: low-level programming, tooling, projects I'm hacking on, or anything else that seems worth documenting.
+software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.
 
 ### recent posts
