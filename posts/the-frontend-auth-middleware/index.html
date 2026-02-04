@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="ramblings">
+
+  <title>The Frontend Auth Middleware: Cross-Origin Iframes Without Third-Party Cookies</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://seg6.space/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://seg6.space/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://seg6.space/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://seg6.space/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/giallo-light.css" />
+
+
+
+  <style>
+  .prose iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://seg6.space/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#why-this-is-hard">Why This Is Hard</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-setup">The Setup</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-idea">The Idea</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#the-code">The Code</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#embed-page-the-bootloader">Embed Page (The Bootloader)</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#service-worker">Service Worker</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#it-works">It Works!</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#things-to-get-right">Things to Get Right</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;seg6.space&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>The Frontend Auth Middleware: Cross-Origin Iframes Without Third-Party Cookies</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Dec 25, 2025</span>
+            </div>
+
+          
+        </div>
+
+        
+        
+
+        
+
+        <p>A few years ago, I worked on a multi-tenant platform. The setup:</p>
+<ul>
+<li>Users could deploy apps to their own subdomains (<code>alice-app1.platform.app</code>, <code>alice-app2.platform.app</code>, <code>bob-todo.platform.app</code>)</li>
+<li>Users could also browse and <em>install</em> apps published by other users, kind of like an app store</li>
+<li>The main dashboard lived on <code>platform.io</code>, where users managed their account, installed apps, and accessed everything</li>
+<li>We wanted to embed these apps in iframes on the dashboard so users could interact with them without leaving the page</li>
+</ul>
+<p>The platform handled auth globally. A user could have multiple apps (<code>alice-app1.platform.app</code>, <code>alice-app2.platform.app</code>), and they all used the same credentials. Apps didn't implement their own auth, the platform's routing layer validated requests and served the app if the user had access. The challenge was getting that validation to work when apps were embedded in iframes on <code>platform.io</code>, since cookies don't cross origins.</p>
+<p>The goal: when a user views an embedded app, they should be authenticated automatically. No login page inside the iframe. They're already logged into <code>platform.io</code> and that should be enough.</p>
+<p>I ended up solving this with service workers, and I'm still pretty happy with how it turned out. Writing it up here in case it's useful to anyone in a similar situation.</p>
+<p><strong>A note on scope:</strong> this describes a fairly specific setup. You need to control both the parent domain <em>and</em> the platform routing layer for the embedded subdomains (even if you don't control the actual app code running on them). If you're trying to embed a third-party site you have no control over, this won't help.</p>
+<h1 id="why-this-is-hard">Why This Is Hard<a class="zola-anchor" href="#why-this-is-hard" aria-label="Anchor link for: why-this-is-hard" style="visibility: hidden;"></a>
+</h1>
+<p>When you embed <code>alice-app1.platform.app</code> in an iframe on <code>platform.io</code>, the browser treats them as separate origins. Your session cookie on <code>platform.io</code> doesn't exist on <code>alice-app1.platform.app</code>. The iframe shows a login page.</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>platform.io (logged in, has session cookie)</span></span>
+<span class="giallo-l"><span>└── iframe: alice-app1.platform.app (different origin, no cookies, sees login page)</span></span></code></pre>
+<p>The obvious solutions all have problems:</p>
+<p><strong>Third-party cookies</strong> used to solve this, but Safari blocks them entirely and Chrome has moved to a "User Choice" prompt that makes third-party cookies far too unreliable to depend on for a core platform feature.</p>
+<p><strong>Passing a token in the URL</strong> (<code>alice-app1.platform.app/?token=xyz</code>) works, but now your auth token is in browser history, server logs, and potentially referrer headers. Not great.</p>
+<p><strong>Shared cookies across subdomains</strong> would be nice, but <code>platform.app</code> is on the <a rel="nofollow noreferrer external" href="https://publicsuffix.org/">Public Suffix List</a>. The browser treats <code>alice-app1.platform.app</code> and <code>bob-todo.platform.app</code> as completely separate sites. Meaning, they can't share cookies with each other or any parent domain.</p>
+<p>You might think: why not host apps under <code>platform.io</code> instead, like <code>alice-app1.apps.platform.io</code>? Then cookies could be shared by defining them on <code>*.platform.io</code>. But remember, users can install apps from <em>other</em> users. If someone publishes an app with an XSS vulnerability, and you install it, that vulnerability now runs in your browser. If apps lived under <code>platform.io</code>, that XSS could steal your <code>platform.io</code> session cookies, giving an attacker full access to your account, billing, API keys, everything. The PSL isolation is an important security consideration here.</p>
+<p><strong>postMessage + localStorage</strong> is what you'd normally reach for here. The parent sends a token via postMessage, the iframe stores it in localStorage, and JavaScript on each page reads it and attaches it to outgoing requests. But this requires the embedded app to include code that participates in this flow. We don't control what users deploy to their subdomains, they bring their own code. We can't require every app to implement our auth handshake. And to add to that, we already had a lot of apps in use on the platform.</p>
+<h1 id="the-setup">The Setup<a class="zola-anchor" href="#the-setup" aria-label="Anchor link for: the-setup" style="visibility: hidden;"></a>
+</h1>
+<p>Here's what I had to work with:</p>
+<ol>
+<li>I controlled <code>platform.io</code> (the parent page with the dashboard)</li>
+<li>Users deployed their own code to <code>*.platform.app</code> subdomains</li>
+<li>I controlled the routing layer for <code>*.platform.app</code> at the platform level, which meant I could reserve certain paths (like <code>/__platform/*</code>) that the platform handled before user code ever saw the request</li>
+<li>I did <em>not</em> control what users deployed to their apps</li>
+</ol>
+<p>That third point is important: even though <code>alice-app1.platform.app</code> runs user code, requests to <code>alice-app1.platform.app/__platform/*</code> are handled by the platform. This is a common pattern, similar to <code>/.well-known/</code> paths for SSL verification or <code>/_next/</code> for Vercel internals.</p>
+<p>This reserved path was my way in.</p>
+<h1 id="the-idea">The Idea<a class="zola-anchor" href="#the-idea" aria-label="Anchor link for: the-idea" style="visibility: hidden;"></a>
+</h1>
+<p>Service workers can intercept HTTP requests and modify them, including adding headers. If I could install a service worker on <code>alice-app1.platform.app</code>, it could inject an auth token into every request automatically, without the user's app code needing to know about it.</p>
+<p>The problem: service workers are origin-scoped. You can only register a service worker from the same origin it will control. I can't register a worker on <code>alice-app1.platform.app</code> from <code>platform.io</code>.</p>
+<p>But I <em>can</em> serve a service worker from <code>alice-app1.platform.app/__platform/v0/embed/</code>, because I control that path.</p>
+<p>As for the flow: to the user, this looks like a standard iframe load. Under the hood, we are running a "bootloader" page:</p>
+<ol>
+<li>Parent page (<code>platform.io</code>) creates an iframe pointing to the bootloader: <code>alice-app1.platform.app/__platform/v0/embed/</code></li>
+<li>The bootloader registers a service worker with <code>scope: '/'</code>.</li>
+<li>Once the worker is ready, the iframe signals the parent via <code>postMessage</code>.</li>
+<li>Parent sends the auth secret back via <code>postMessage</code>.</li>
+<li>The iframe passes the secret to the service worker, which stores it in <code>CacheStorage</code>.</li>
+<li>Iframe navigates to <code>/</code>. Now every request, including the initial document request for the user's app, goes through the service worker, which injects the auth header.</li>
+<li>User sees their app, authenticated.</li>
+</ol>
+<h1 id="the-code">The Code<a class="zola-anchor" href="#the-code" aria-label="Anchor link for: the-code" style="visibility: hidden;"></a>
+</h1>
+<p>The key pieces, trimmed down. Full code is in <a rel="nofollow noreferrer external" href="https://gist.github.com/seg6/79a2bef9a49c7d6b519ad994a25a7bad">this gist</a>.</p>
+<h2 id="embed-page-the-bootloader">Embed Page (The Bootloader)<a class="zola-anchor" href="#embed-page-the-bootloader" aria-label="Anchor link for: embed-page-the-bootloader" style="visibility: hidden;"></a>
+</h2>
+<p>First, lock down service worker registration so user code can't interfere:</p>
+<pre class="giallo z-code"><code data-lang="javascript"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> stage 1</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> 1. overload the service worker register function</span></span>
+<span class="giallo-l"><span class="z-storage z-type">const</span><span class="z-variable z-other z-constant"> register</span><span class="z-keyword"> =</span><span class="z-variable z-other"> navigator</span><span>.</span><span class="z-variable z-other">serviceWorker</span><span>.</span><span class="z-variable z-other">register</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-variable z-other">navigator</span><span>.</span><span class="z-variable z-other">serviceWorker</span><span>.</span><span class="z-entity z-name">register</span><span class="z-keyword"> =</span><span class="z-storage z-type"> function</span><span>(</span><span class="z-variable">script_url</span><span>,</span><span class="z-variable"> options</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-variable z-other">script_url</span><span class="z-keyword"> ==</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">/service-worker.js</span><span class="z-punctuation z-definition z-string">&#39;</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-variable z-other"> register</span><span>.</span><span class="z-entity z-name">call</span><span>(</span><span class="z-variable z-other">navigator</span><span>.</span><span class="z-variable z-other">serviceWorker</span><span>,</span><span class="z-variable z-other"> script_url</span><span>,</span><span class="z-variable z-other"> options</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span><span class="z-keyword"> else</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-support"> Promise</span><span>.</span><span class="z-entity z-name">reject</span><span>(</span><span class="z-keyword">new</span><span class="z-entity z-name"> Error</span><span>(</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">embed runtime: registration of custom service workers is not allowed</span><span class="z-punctuation z-definition z-string">&#39;</span><span>)</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>Then register the worker and set up the handshake:</p>
+<pre class="giallo z-code"><code data-lang="javascript"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> stage 2</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> 1. register the embed service worker</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> 2. register a listener to the current window to receive messages from the parent page</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> 3. notify the parent page that the service worker is now activated</span></span>
+<span class="giallo-l"><span class="z-variable z-other">navigator</span><span>.</span><span class="z-variable z-other">serviceWorker</span><span>.</span><span class="z-entity z-name">register</span><span>(</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">/service-worker.js</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span><span> {</span><span> scope</span><span>:</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">/</span><span class="z-punctuation z-definition z-string">&#39;</span><span> }</span><span>)</span></span>
+<span class="giallo-l"><span>    .</span><span class="z-entity z-name">then</span><span>(</span><span class="z-variable">registration</span><span class="z-storage z-type"> =&gt;</span><span> {</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        registration</span><span>.</span><span class="z-entity z-name">unregister</span><span class="z-keyword"> =</span><span class="z-storage z-type"> function</span><span>(</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">            //</span><span class="z-comment"> no-op: unregister does nothing and just resolves</span></span>
+<span class="giallo-l"><span class="z-keyword">            return</span><span class="z-support"> Promise</span><span>.</span><span class="z-entity z-name">resolve</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>        }</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-variable z-other">        window</span><span>.</span><span class="z-entity z-name">addEventListener</span><span>(</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">message</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span><span class="z-variable z-other"> embed_runtime_parent_handler</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-variable z-other">        window</span><span>.</span><span class="z-variable z-other">parent</span><span>.</span><span class="z-entity z-name">postMessage</span><span>(</span><span>{</span></span>
+<span class="giallo-l"><span>            type</span><span>:</span><span class="z-punctuation z-definition z-string">  &#39;</span><span class="z-string">service_worker_registered</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span></span>
+<span class="giallo-l"><span>            data</span><span>:</span><span class="z-constant"> null</span><span>,</span></span>
+<span class="giallo-l"><span>        }</span><span>,</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">https://platform.io</span><span class="z-punctuation z-definition z-string">&#39;</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span><span>)</span><span>;</span></span></code></pre>
+<p>When the parent sends the secret, pass it to the service worker:</p>
+<pre class="giallo z-code"><code data-lang="javascript"><span class="giallo-l"><span class="z-storage z-type">function</span><span class="z-entity z-name"> embed_runtime_secret_key_handler</span><span>(</span><span class="z-variable">event</span><span>,</span><span class="z-variable"> event_data</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    fetch</span><span>(</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">/__platform/v0/embed-handshake</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span><span> {</span></span>
+<span class="giallo-l"><span>            method</span><span>:</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">POST</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span></span>
+<span class="giallo-l"><span>            headers</span><span>:</span><span> {</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">Content-Type</span><span class="z-punctuation z-definition z-string">&#39;</span><span>:</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">application/json</span><span class="z-punctuation z-definition z-string">&#39;</span><span> }</span><span>,</span></span>
+<span class="giallo-l"><span>            body</span><span>:</span><span class="z-variable z-other z-constant"> JSON</span><span>.</span><span class="z-entity z-name">stringify</span><span>(</span><span>{</span><span> secret_key</span><span>:</span><span class="z-variable z-other"> event_data</span><span>.</span><span class="z-variable z-other">secret_key</span><span> }</span><span>)</span></span>
+<span class="giallo-l"><span>        }</span><span>)</span></span>
+<span class="giallo-l"><span>        .</span><span class="z-entity z-name">then</span><span>(</span><span class="z-variable">response</span><span class="z-storage z-type"> =&gt;</span><span class="z-variable z-other"> response</span><span>.</span><span class="z-entity z-name">json</span><span>(</span><span>)</span><span>)</span></span>
+<span class="giallo-l"><span>        .</span><span class="z-entity z-name">then</span><span>(</span><span class="z-variable">data</span><span class="z-storage z-type"> =&gt;</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">            if</span><span> (</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">redirect</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-keyword"> in</span><span class="z-variable z-other"> event_data</span><span>)</span></span>
+<span class="giallo-l"><span class="z-variable z-other">                window</span><span>.</span><span class="z-variable z-other">location</span><span>.</span><span class="z-variable z-other">href</span><span class="z-keyword"> =</span><span class="z-variable z-other"> event_data</span><span>.</span><span class="z-variable z-other">redirect</span><span>;</span></span>
+<span class="giallo-l"><span>        }</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><h2 id="service-worker">Service Worker<a class="zola-anchor" href="#service-worker" aria-label="Anchor link for: service-worker" style="visibility: hidden;"></a>
+</h2>
+<p>The worker stores the secret and injects it into all same-origin requests:</p>
+<pre class="giallo z-code"><code data-lang="javascript"><span class="giallo-l"><span class="z-storage z-type">const</span><span class="z-variable z-other z-constant"> SECRET_CACHE_NAME</span><span class="z-keyword"> =</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">secret-key-cache</span><span class="z-punctuation z-definition z-string">&#39;</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">const</span><span class="z-variable z-other z-constant"> SECRET_HANDSHAKE_ROUTE</span><span class="z-keyword"> =</span><span class="z-punctuation z-definition z-string"> &#39;</span><span class="z-string">/__platform/v0/embed-handshake</span><span class="z-punctuation z-definition z-string">&#39;</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-variable z-other">self</span><span>.</span><span class="z-entity z-name">addEventListener</span><span>(</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">fetch</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span><span class="z-variable"> event</span><span class="z-storage z-type"> =&gt;</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    const</span><span class="z-variable z-other z-constant"> url</span><span class="z-keyword"> =</span><span class="z-keyword"> new</span><span class="z-entity z-name"> URL</span><span>(</span><span class="z-variable z-other">event</span><span>.</span><span class="z-variable z-other">request</span><span>.</span><span class="z-variable z-other">url</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-variable z-other">url</span><span>.</span><span class="z-variable z-other">pathname</span><span class="z-keyword"> ===</span><span class="z-variable z-other z-constant"> SECRET_HANDSHAKE_ROUTE</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        event</span><span>.</span><span class="z-entity z-name">respondWith</span><span>(</span><span class="z-entity z-name">handle_secret_handshake_route</span><span>(</span><span class="z-variable z-other">event</span><span>.</span><span class="z-variable z-other">request</span><span>)</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span><span class="z-keyword"> else</span><span class="z-keyword"> if</span><span> (</span><span class="z-variable z-other">url</span><span>.</span><span class="z-variable z-other">origin</span><span class="z-keyword"> ===</span><span class="z-variable z-other"> location</span><span>.</span><span class="z-variable z-other">origin</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        event</span><span>.</span><span class="z-entity z-name">respondWith</span><span>(</span><span class="z-entity z-name">fetch_with_secret_key</span><span>(</span><span class="z-variable z-other">event</span><span>.</span><span class="z-variable z-other">request</span><span>)</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span><span class="z-keyword"> else</span><span> {</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        event</span><span>.</span><span class="z-entity z-name">respondWith</span><span>(</span><span class="z-entity z-name">fetch</span><span>(</span><span class="z-variable z-other">event</span><span>.</span><span class="z-variable z-other">request</span><span>)</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage">async</span><span class="z-storage z-type"> function</span><span class="z-entity z-name"> fetch_with_secret_key</span><span>(</span><span class="z-variable">request</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    const</span><span class="z-variable z-other z-constant"> cache</span><span class="z-keyword"> =</span><span class="z-keyword"> await</span><span class="z-variable z-other"> caches</span><span>.</span><span class="z-entity z-name">open</span><span>(</span><span class="z-variable z-other z-constant">SECRET_CACHE_NAME</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    const</span><span class="z-variable z-other z-constant"> cached_response</span><span class="z-keyword"> =</span><span class="z-keyword"> await</span><span class="z-variable z-other"> cache</span><span>.</span><span class="z-entity z-name">match</span><span>(</span><span class="z-variable z-other z-constant">SECRET_HANDSHAKE_ROUTE</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> secret_key</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-variable z-other">cached_response</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">        const</span><span class="z-variable z-other z-constant"> cached_data</span><span class="z-keyword"> =</span><span class="z-keyword"> await</span><span class="z-variable z-other"> cached_response</span><span>.</span><span class="z-entity z-name">json</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        secret_key</span><span class="z-keyword"> =</span><span class="z-variable z-other"> cached_data</span><span>.</span><span class="z-variable z-other">secret_key</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-variable z-other">secret_key</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">        const</span><span class="z-variable z-other z-constant"> new_headers</span><span class="z-keyword"> =</span><span class="z-keyword"> new</span><span class="z-entity z-name"> Headers</span><span>(</span><span class="z-variable z-other">request</span><span>.</span><span class="z-variable z-other">headers</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        new_headers</span><span>.</span><span class="z-entity z-name">append</span><span>(</span><span class="z-punctuation z-definition z-string">&#39;</span><span class="z-string">X-Secret-Key</span><span class="z-punctuation z-definition z-string">&#39;</span><span>,</span><span class="z-variable z-other"> secret_key</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-entity z-name"> fetch</span><span>(</span><span class="z-keyword">new</span><span class="z-entity z-name"> Request</span><span>(</span><span class="z-variable z-other">request</span><span>,</span><span> {</span><span> headers</span><span>:</span><span class="z-variable z-other"> new_headers</span><span> }</span><span>)</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> fetch</span><span>(</span><span class="z-variable z-other">request</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><h1 id="it-works">It Works!<a class="zola-anchor" href="#it-works" aria-label="Anchor link for: it-works" style="visibility: hidden;"></a>
+</h1>
+<p>The reserved path gives me a foothold on origins I don't otherwise control. I can't touch user code, but I can serve my own code at <code>/__platform/*</code>.</p>
+<p>Service workers, once registered, persist across navigations. The worker registers with <code>scope: '/'</code>, so it intercepts all requests on that origin, including requests to routes defined by the user's app.</p>
+<p><strong>A note on security:</strong> Because the service worker stores the secret in <code>CacheStorage</code>, JavaScript running on the subdomain can technically read it. But since we use unique, per-app secrets, this only "exposes" the app to itself.</p>
+<h2 id="things-to-get-right">Things to Get Right<a class="zola-anchor" href="#things-to-get-right" aria-label="Anchor link for: things-to-get-right" style="visibility: hidden;"></a>
+</h2>
+<p>If you're implementing something like this:</p>
+<ul>
+<li><strong>Validate postMessage origins.</strong> We should never accept a secret without checking <code>event.origin</code>.</li>
+<li><strong>Handling Safari/ITP.</strong> Safari may purge Service Workers and CacheStorage if the user doesn't visit the subdomain for 7 days. Because our "bootloader" runs every time the iframe is initialized, it automatically re-registers and re-syncs the secret, making the solution resilient to ITP's aggressive cleanup.</li>
+<li><strong>Use short-lived tokens.</strong> The injected secret shouldn't be a master key. It should be a session token that the backend can rotate.</li>
+</ul>
+<hr />
+<p>This came out of a real constraint: I needed seamless auth across origins, couldn't modify user code, and third-party cookies weren't an option. The "reserved path pattern" gave me just enough control to bootstrap a service worker, and the service worker handled the rest.</p>
+
+      </article>
+
+      
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+    
+      
+    
+    
+    <a id="rss-btn" href="https://seg6.space/posts/rss.xml">RSS</a>
+    
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+
+<dialog id="rss-mask">
+  <div>
+    <a href="https:&#x2F;&#x2F;seg6.space&#x2F;posts&#x2F;rss.xml">https:&#x2F;&#x2F;seg6.space&#x2F;posts&#x2F;rss.xml</a>
+    
+    
+    <button autofocus aria-label="copy" data-link="https:&#x2F;&#x2F;seg6.space&#x2F;posts&#x2F;rss.xml" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z" fill="currentColor"></path></svg>
+
+    </button>
+  </div>
+</dialog>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+
+  <script src="https://seg6.space/js/main.js"></script>
+</body>
+
+</html>
