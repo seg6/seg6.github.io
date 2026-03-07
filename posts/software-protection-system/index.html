@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  
+  
+    
+  
+  <meta name="description" content="A build-and-break walkthrough of license protection.">
+
+  <title>Building a Software Protection System From First Principles</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="https://seg6.space/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://seg6.space/img/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://seg6.space/img/apple-touch-icon.png">
+  
+  <style>
+
+  /* light mode colors */
+  body {
+    --primary-color: #5871a2;
+    --primary-pale-color: #5871a233;
+    --primary-decoration-color: #5871a210;
+    --bg-color: #ffffff;
+    --text-color: #2f3030;
+    --text-pale-color: #767676;
+    --text-decoration-color: #a9a9a9;
+    --highlight-mark-color: #5f75b020;
+
+    --callout-note-color: #5871a2;
+    --callout-tip-color: #268556;
+    --callout-important-color: #885fc9;
+    --callout-warning-color: #ab6632;
+    --callout-caution-color: #c64e4e;
+  }
+
+  /* dark mode colors */
+  body.dark {
+    --primary-color: #6f8fd1;
+    --primary-pale-color: #6f8fd166;
+    --primary-decoration-color: #6f8fd112;
+    --bg-color: #1c1c1c;
+    --text-color: #c1c1c1;
+    --text-pale-color: #848484;
+    --text-decoration-color: #5f5f5f;
+    --highlight-mark-color: #8296cb3b;
+
+    --callout-note-color: #6f8fd1;
+    --callout-tip-color: #47976f;
+    --callout-important-color: #9776cd;
+    --callout-warning-color: #ad7a52;
+    --callout-caution-color: #d06161;
+  }
+
+  /* typography */
+  body {
+    --main-font: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --homepage-max-width: 768px;
+    --main-max-width: 768px;
+    --avatar-size: 60px;
+    --font-size: 16px;
+    --line-height: 1.75;
+    --img-border-radius: 0px;
+    --detail-border-radius: 0px;
+    --dark-mode-img-brightness: 0.75;
+    --dark-mode-chart-brightness: 0.75;
+    --inline-code-border-radius: 2px;
+    --inline-code-bg-color: var(--primary-decoration-color);
+    --block-code-border-radius: 0px;
+    --block-code-border-color: var(--primary-color);
+    --detail-border-color: var(--primary-color);
+  }
+
+</style>
+
+  <link rel="stylesheet" href="https://seg6.space/main.css">
+  
+
+<link id="hl" rel="stylesheet" type="text/css" href="/giallo-light.css" />
+
+
+
+  <style>
+  .prose iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+
+</head>
+
+<body class="post">
+  
+  <script>
+    const theme = sessionStorage.getItem('theme');
+    const match = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if ((theme && theme == 'dark') || (!theme && match)) {
+      document.body.classList.add('dark');
+      const hl = document.querySelector('link#hl');
+      if (hl) hl.href = 'https://seg6.space/giallo-dark.css';
+    }
+  </script>
+  
+  
+<div id="wrapper">
+  <div id="blank"></div>
+  <aside>
+    
+    
+    <nav>
+      <ul>
+        
+        <li>
+          <a class="h2" href="#where-things-start-an-application">Where Things Start: An application</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#iteration-1-hardcoded-serial">Iteration 1: Hardcoded Serial</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#cracking-it">Cracking It</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#iteration-2-obfuscated-serial">Iteration 2: Obfuscated Serial</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#iteration-3-digital-signatures">Iteration 3: Digital Signatures</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#iteration-4-hardware-binding">Iteration 4: Hardware Binding</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#binary-patching">Binary Patching</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#this-defeats-everything">This Defeats Everything</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#iteration-5-the-secret-box">Iteration 5: The Secret Box</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#so-where-s-the-key">So Where&#x27;s the Key?</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#what-happens-when-you-patch-now">What Happens When You Patch Now?</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#the-full-decryption-flow">The Full Decryption Flow</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#iteration-6-delegation">Iteration 6: Delegation</a>
+          
+          <ul>
+            
+            <li>
+              <a class="h3" href="#the-delegation-structure">The Delegation Structure</a>
+            </li>
+            
+            <li>
+              <a class="h3" href="#why-this-matters-key-rotation">Why This Matters: Key Rotation</a>
+            </li>
+            
+          </ul>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#remaining-attack-vectors">Remaining Attack Vectors</a>
+          
+        </li>
+        
+        <li>
+          <a class="h2" href="#conclusion">Conclusion</a>
+          
+        </li>
+        
+      </ul>
+    </nav>
+    
+    
+    <button id="back-to-top" aria-label="back to top">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+    </button>
+    
+  </aside>
+  <main>
+    
+<header>
+  <nav>
+    <a id="back-link" href="https:&#x2F;&#x2F;seg6.space&#x2F;posts">← Back</a>
+  </nav>
+</header>
+
+
+    <div>
+      
+      
+      
+      
+      <div id="copy-cfg" style="display: none;" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+"></div>
+      
+      <article class="prose">
+        <h1>Building a Software Protection System From First Principles</h1>
+        <div id="post-info">
+          <div id="date">
+            <span id="publish">Mar 5, 2026</span>
+            </div>
+
+          
+        </div>
+
+        
+        
+
+        
+
+        <p>Let's walk through building a software protection system from first principles. I'm purposefully not elaborating any properties of such a system upfront. We'll be iteratively exploring them as we build and break each attempt. In the end, we'll end up with a practical solution.</p>
+<p>Before implementing any licensing system, define what "good enough" means for your product. Who are you defending against? Casual sharing, hobbyist reverse engineering, organized cracking groups, or all of them? How much user friction can you tolerate? How much operational complexity can you afford?</p>
+<p>Think of this post as a ladder, not a mandatory checklist. You can stop at any iteration if it meets your threat model, or keep going if your requirements demand stronger protection.</p>
+<h1 id="where-things-start-an-application">Where Things Start: An application<a class="zola-anchor" href="#where-things-start-an-application" aria-label="Anchor link for: where-things-start-an-application" style="visibility: hidden;"></a>
+</h1>
+<p>We will start with putting together a simple application that does something useful. It'll print the meaning of life.</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">stdio.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">define</span><span class="z-entity z-name"> ANSWER</span><span class="z-constant"> 42</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> app_main</span><span>(</span><span class="z-storage z-type">void</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    printf</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">the meaning of life is </span><span class="z-constant">%d</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span> ANSWER</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-constant"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> main</span><span>(</span><span class="z-storage z-type">void</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> app_main</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ cc -o app iter0.c</span></span>
+<span class="giallo-l"><span>$ ./app</span></span>
+<span class="giallo-l"><span>the meaning of life is 42</span></span></code></pre>
+<p>There we have it, an application that provides value. The <code>ANSWER</code> is our secret, the thing worth protecting. In a real application this might be a proprietary algorithm, decryption keys for premium content, or anything really.</p>
+<p>The question we're trying to answer: how do we make sure only paying customers can run this?</p>
+<h1 id="iteration-1-hardcoded-serial">Iteration 1: Hardcoded Serial<a class="zola-anchor" href="#iteration-1-hardcoded-serial" aria-label="Anchor link for: iteration-1-hardcoded-serial" style="visibility: hidden;"></a>
+</h1>
+<p>The most straightforward approach is to ask for a password before doing anything useful.</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">stdio.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">string.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">define</span><span class="z-entity z-name"> ANSWER</span><span class="z-constant"> 42</span></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">define</span><span class="z-entity z-name"> SERIAL</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">XXXX-YYYY-ZZZZ</span><span class="z-punctuation z-definition z-string">&quot;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> app_main</span><span>(</span><span class="z-storage z-type">void</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    printf</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">the meaning of life is </span><span class="z-constant">%d</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span> ANSWER</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-constant"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> check_license</span><span>(</span><span class="z-storage">const</span><span class="z-storage z-type"> char</span><span class="z-keyword"> *</span><span class="z-variable">input</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> strcmp</span><span>(</span><span>input</span><span>,</span><span> SERIAL</span><span>)</span><span class="z-keyword"> ==</span><span class="z-constant"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> main</span><span>(</span><span class="z-storage z-type">int</span><span class="z-variable"> argc</span><span>,</span><span class="z-storage z-type"> char</span><span class="z-keyword"> *</span><span class="z-variable">argv</span><span class="z-storage">[]</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span>argc </span><span class="z-keyword">!=</span><span class="z-constant"> 2</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">        fprintf</span><span>(</span><span>stderr</span><span>,</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">usage: </span><span class="z-constant">%s</span><span class="z-string"> &lt;serial&gt;</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span class="z-variable"> argv</span><span>[</span><span class="z-constant">0</span><span>]</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-constant"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-keyword">!</span><span class="z-entity z-name">check_license</span><span>(</span><span class="z-variable">argv</span><span>[</span><span class="z-constant">1</span><span>]</span><span>)</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">        fprintf</span><span>(</span><span>stderr</span><span>,</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">invalid license</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-constant"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> app_main</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ cc -o app iter1.c</span></span>
+<span class="giallo-l"><span>$ ./app wrong</span></span>
+<span class="giallo-l"><span>invalid license</span></span>
+<span class="giallo-l"><span>$ ./app XXXX-YYYY-ZZZZ</span></span>
+<span class="giallo-l"><span>the meaning of life is 42</span></span></code></pre>
+<p>This works! We could ship this, but let's see how it holds up.</p>
+<h2 id="cracking-it">Cracking It<a class="zola-anchor" href="#cracking-it" aria-label="Anchor link for: cracking-it" style="visibility: hidden;"></a>
+</h2>
+<p>The problem with hardcoded strings is that they're just sitting there in the binary, waiting to be found.</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ strings app | grep -E &#39;^[A-Z]{4}-[A-Z]{4}-[A-Z]{4}$&#39;</span></span>
+<span class="giallo-l"><span>XXXX-YYYY-ZZZZ</span></span></code></pre>
+<p>That took about half a second. The attacker now has a valid serial.</p>
+<h1 id="iteration-2-obfuscated-serial">Iteration 2: Obfuscated Serial<a class="zola-anchor" href="#iteration-2-obfuscated-serial" aria-label="Anchor link for: iteration-2-obfuscated-serial" style="visibility: hidden;"></a>
+</h1>
+<p>Since plaintext strings are too easy to find, let's hide the serial. We can XOR it, hash it, or use any number of obfuscation techniques.</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">stdio.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">string.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">stddef.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">define</span><span class="z-entity z-name"> ANSWER</span><span class="z-constant"> 42</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> app_main</span><span>(</span><span class="z-storage z-type">void</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    printf</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">the meaning of life is </span><span class="z-constant">%d</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span> ANSWER</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-constant"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> Serial &quot;XXXX-YYYY-ZZZZ&quot; XOR&#39;d with 0x42</span></span>
+<span class="giallo-l"><span class="z-storage">static</span><span class="z-storage"> const</span><span class="z-storage z-type"> unsigned</span><span class="z-storage z-type"> char</span><span> obfuscated_serial</span><span class="z-storage">[]</span><span class="z-keyword"> =</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    0x</span><span class="z-constant">1a</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">1a</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">1a</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">1a</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">6f</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">1b</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">1b</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">1b</span><span>,</span></span>
+<span class="giallo-l"><span class="z-keyword">    0x</span><span class="z-constant">1b</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">6f</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">18</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">18</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">18</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">18</span><span>,</span><span class="z-keyword"> 0x</span><span class="z-constant">00</span></span>
+<span class="giallo-l"><span>}</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> check_license</span><span>(</span><span class="z-storage">const</span><span class="z-storage z-type"> char</span><span class="z-keyword"> *</span><span class="z-variable">input</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    size_t</span><span> len </span><span class="z-keyword">=</span><span class="z-entity z-name"> strlen</span><span>(</span><span>input</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span>len </span><span class="z-keyword">!=</span><span class="z-keyword"> sizeof</span><span>(</span><span>obfuscated_serial</span><span>)</span><span class="z-keyword"> -</span><span class="z-constant"> 1</span><span>)</span><span class="z-keyword"> return</span><span class="z-constant"> 0</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    for</span><span> (</span><span class="z-storage z-type">size_t</span><span> i </span><span class="z-keyword">=</span><span class="z-constant"> 0</span><span>;</span><span> i </span><span class="z-keyword">&lt;</span><span> len</span><span>;</span><span> i</span><span class="z-keyword">++</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">        if</span><span> (</span><span>(</span><span class="z-variable">input</span><span>[</span><span>i</span><span>]</span><span class="z-keyword"> ^</span><span class="z-keyword"> 0x</span><span class="z-constant">42</span><span>)</span><span class="z-keyword"> !=</span><span class="z-variable"> obfuscated_serial</span><span>[</span><span>i</span><span>]</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">            return</span><span class="z-constant"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-constant"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> main</span><span>(</span><span class="z-storage z-type">int</span><span class="z-variable"> argc</span><span>,</span><span class="z-storage z-type"> char</span><span class="z-keyword"> *</span><span class="z-variable">argv</span><span class="z-storage">[]</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span>argc </span><span class="z-keyword">!=</span><span class="z-constant"> 2</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">        fprintf</span><span>(</span><span>stderr</span><span>,</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">usage: </span><span class="z-constant">%s</span><span class="z-string"> &lt;serial&gt;</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span class="z-variable"> argv</span><span>[</span><span class="z-constant">0</span><span>]</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-constant"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-keyword">!</span><span class="z-entity z-name">check_license</span><span>(</span><span class="z-variable">argv</span><span>[</span><span class="z-constant">1</span><span>]</span><span>)</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">        fprintf</span><span>(</span><span>stderr</span><span>,</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">invalid license</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-constant"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> app_main</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>Now <code>strings</code> comes up empty:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ cc -o app iter2.c</span></span>
+<span class="giallo-l"><span>$ strings app | grep -E &#39;^[A-Z]{4}-&#39;</span></span>
+<span class="giallo-l"><span>$</span></span></code></pre>
+<p>The serial is no longer directly visible. But here's the problem: the deobfuscation logic has to exist in the binary. We XOR with <code>0x42</code> to check the input, which means an attacker can find that code, understand the scheme, and reverse it. We could use stronger obfuscation, nested encryption, code virtualization, anti-disassembly tricks, but it's fundamentally a hide-and-seek game. The algorithm to recover the secret is always <em>right there</em>, waiting to be found. We're not making it impossible, just a tad bit tedious.</p>
+<p>Here's the first realization we should have: obfuscation is a security through obscurity measure. Given enough time and motivation, a reverse engineer will always win because the binary must contain everything needed to perform the check.</p>
+<p>As a fun side note, modern reverse engineering tools often auto detect simple XOR encoded blobs, which makes this style of obfuscation even less effective in practice!</p>
+<h1 id="iteration-3-digital-signatures">Iteration 3: Digital Signatures<a class="zola-anchor" href="#iteration-3-digital-signatures" aria-label="Anchor link for: iteration-3-digital-signatures" style="visibility: hidden;"></a>
+</h1>
+<p>The real problem with iterations 1 and 2 is that the secret has to be shared. One person buys the software, posts the serial online, and now everyone can use it.</p>
+<p>What we need is licenses that are:</p>
+<ul>
+<li>verifiable by anyone (the application can check them)</li>
+<li>unforgeable by some third party provider</li>
+<li>unique to each customer</li>
+</ul>
+<p>This is where asymmetric cryptography comes into play and helps us.</p>
+<p>The idea is that instead of one shared secret, we use a <strong>key pair</strong>. A private key (which we keep) and a public key (which goes in the binary). The private key can <em>sign</em> data, producing a signature. The public key can <em>verify</em> that signature, but it can't create new ones.</p>
+<p>The math behind this is designed so that deriving the private key from the public key is computationally infeasible, mass-of-the-sun-converted-to-computing-power infeasible. This is the same foundation that secures HTTPS, SSH, and most of modern cryptography.</p>
+<p>So we sign each customer's license with our private key. The application verifies it with the embedded public key. An attacker can extract that public key from the binary, but it's useless to them. They need the private key to forge licenses, and that never leaves our server. And if they tamper with anything in the license (change the user ID, extend the expiry, flip a single bit) verification fails.</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">stdio.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">string.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">ed25519.h</span><span class="z-punctuation z-definition z-string">&quot;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">define</span><span class="z-entity z-name"> ANSWER</span><span class="z-constant"> 42</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> our public key (the private key stays with us)</span></span>
+<span class="giallo-l"><span class="z-storage">static</span><span class="z-storage"> const</span><span class="z-storage z-type"> unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> vendor_pubkey</span><span>[</span><span class="z-constant">32</span><span>]</span><span class="z-keyword"> =</span><span> {</span><span class="z-punctuation z-definition z-comment"> /*</span><span class="z-comment"> ... </span><span class="z-punctuation z-definition z-comment">*/</span><span> }</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> struct</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    char</span><span class="z-variable"> user_id</span><span>[</span><span class="z-constant">64</span><span>]</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    uint64_t</span><span> expires_at</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> signature</span><span>[</span><span class="z-constant">64</span><span>]</span><span>;</span><span class="z-punctuation z-definition z-comment"> //</span><span class="z-comment"> signature is derived from the `user_id` and `expires_at`</span></span>
+<span class="giallo-l"><span>}</span><span> License</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> verify_license</span><span>(</span><span class="z-storage">const</span><span> License </span><span class="z-keyword">*</span><span class="z-variable">lic</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> message</span><span>[</span><span class="z-constant">72</span><span>]</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    memcpy</span><span>(</span><span>message</span><span>,</span><span class="z-variable z-other"> lic</span><span>-&gt;</span><span class="z-variable z-other">user_id</span><span>,</span><span class="z-constant"> 64</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    memcpy</span><span>(</span><span>message </span><span class="z-keyword">+</span><span class="z-constant"> 64</span><span>,</span><span class="z-keyword"> &amp;</span><span class="z-variable z-other">lic</span><span>-&gt;</span><span class="z-variable z-other">expires_at</span><span>,</span><span class="z-constant"> 8</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> ed25519_verify</span><span>(</span><span class="z-variable z-other">lic</span><span>-&gt;</span><span class="z-variable z-other">signature</span><span>,</span><span> message</span><span>,</span><span class="z-constant"> 72</span><span>,</span><span> vendor_pubkey</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> main</span><span>(</span><span class="z-storage z-type">int</span><span class="z-variable"> argc</span><span>,</span><span class="z-storage z-type"> char</span><span class="z-keyword"> *</span><span class="z-variable">argv</span><span class="z-storage">[]</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span>    License lic</span><span>;</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> load license from file</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-keyword">!</span><span class="z-entity z-name">verify_license</span><span>(</span><span class="z-keyword">&amp;</span><span>lic</span><span>)</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name">        fprintf</span><span>(</span><span>stderr</span><span>,</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">invalid license</span><span class="z-constant">\n</span><span class="z-punctuation z-definition z-string">&quot;</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-constant"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-entity z-name"> app_main</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>Now a potential attacker is in a tough spot. They can't forge a license because they don't have the private key we own. They can't find the signing key in the binary because only the public key is embedded (and that's useless for signing). And they can't modify an existing license because any change breaks the signature.</p>
+<p>This is a significant improvement, you'd need to break elliptic curve cryptography to forge a license.</p>
+<h1 id="iteration-4-hardware-binding">Iteration 4: Hardware Binding<a class="zola-anchor" href="#iteration-4-hardware-binding" aria-label="Anchor link for: iteration-4-hardware-binding" style="visibility: hidden;"></a>
+</h1>
+<p>Signatures solved the forgery problem, but they don't prevent "casual" sharing. One customer buys a license, uploads the file somewhere, and everyone just copies it. The signature is valid no matter who runs the application.</p>
+<p>The fix is to bind licenses to specific machines using a hardware ID. We derive a unique identifier from machine specific data and include it in what gets signed.</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-keyword">#</span><span class="z-keyword">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">openssl/sha.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">void</span><span class="z-entity z-name"> get_hwid</span><span>(</span><span class="z-storage z-type">unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> hwid</span><span>[</span><span class="z-constant">32</span><span>]</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    char</span><span class="z-variable"> machine_uid</span><span>[</span><span class="z-constant">256</span><span>]</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    get_machine_uid</span><span>(</span><span>machine_uid</span><span>)</span><span>;</span><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> OS-specific call</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> add domain separation so the same machine ID</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> doesn&#39;t work across different applications</span></span>
+<span class="giallo-l"><span>    SHA256_CTX ctx</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    SHA256_Init</span><span>(</span><span class="z-keyword">&amp;</span><span>ctx</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    SHA256_Update</span><span>(</span><span class="z-keyword">&amp;</span><span>ctx</span><span>,</span><span> machine_uid</span><span>,</span><span class="z-entity z-name"> strlen</span><span>(</span><span>machine_uid</span><span>)</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    SHA256_Update</span><span>(</span><span class="z-keyword">&amp;</span><span>ctx</span><span>,</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">life-hwid</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span class="z-constant"> 9</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    SHA256_Final</span><span>(</span><span>hwid</span><span>,</span><span class="z-keyword"> &amp;</span><span>ctx</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>Now the license includes the HWID, and we check that it matches the current machine:</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> struct</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    char</span><span class="z-variable"> user_id</span><span>[</span><span class="z-constant">64</span><span>]</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> hwid</span><span>[</span><span class="z-constant">32</span><span>]</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    uint64_t</span><span> expires_at</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> signature</span><span>[</span><span class="z-constant">64</span><span>]</span><span>;</span><span class="z-punctuation z-definition z-comment"> //</span><span class="z-comment"> signs all of the above</span></span>
+<span class="giallo-l"><span>}</span><span> License</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">int</span><span class="z-entity z-name"> verify_license</span><span>(</span><span class="z-storage">const</span><span> License </span><span class="z-keyword">*</span><span class="z-variable">lic</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    unsigned</span><span class="z-storage z-type"> char</span><span class="z-variable"> local_hwid</span><span>[</span><span class="z-constant">32</span><span>]</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    get_hwid</span><span>(</span><span>local_hwid</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span> (</span><span class="z-entity z-name">memcmp</span><span>(</span><span class="z-variable z-other">lic</span><span>-&gt;</span><span class="z-variable z-other">hwid</span><span>,</span><span> local_hwid</span><span>,</span><span class="z-constant"> 32</span><span>)</span><span class="z-keyword"> !=</span><span class="z-constant"> 0</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-constant"> 0</span><span>;</span><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> wrong machine</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> verify signature</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>Sharing a license file is now pointless, it only works on the machine it was issued for.</p>
+<p>One thing to note: HWIDs are a bit "brittle". If a user replaces their network card, upgrades their BIOS, or makes other hardware changes, the HWID might change and invalidate their license. Often, robust implementations use a fuzzy match (e.g., "at least 3 of 5 hardware attributes must match") or multi factor HWIDs to avoid annoying legitimate customers. We use a single-factor HWID for simplicity.</p>
+<h1 id="binary-patching">Binary Patching<a class="zola-anchor" href="#binary-patching" aria-label="Anchor link for: binary-patching" style="visibility: hidden;"></a>
+</h1>
+<p>At this point we've built up a reasonable set of protections:</p>
+<ul>
+<li>obfuscated secret: makes it difficult to find them with <code>strings</code></li>
+<li>cryptographic signatures: renders forging licenses impossible</li>
+<li>hardware binding: makes it impossible to share licenses</li>
+</ul>
+<p>But there's an attack we haven't considered yet. One that makes all of the above irrelevant.</p>
+<p>The attacker doesn't need to find the serial, forge a signature, or spoof the HWID. They can simply change the program's behavior.</p>
+<p>Let's look at the compiled code from iteration 2:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ objdump -d -M intel app | grep -A 30 &#39;&lt;main&gt;:&#39;</span></span>
+<span class="giallo-l"><span>000000000000122a &lt;main&gt;:</span></span>
+<span class="giallo-l"><span>    122a:    55                       push   rbp</span></span>
+<span class="giallo-l"><span>    122b:    48 89 e5                 mov    rbp,rsp</span></span>
+<span class="giallo-l"><span>    122e:    48 83 ec 10              sub    rsp,0x10</span></span>
+<span class="giallo-l"><span>    1232:    89 7d fc                 mov    DWORD PTR [rbp-0x4],edi</span></span>
+<span class="giallo-l"><span>    1235:    48 89 75 f0              mov    QWORD PTR [rbp-0x10],rsi</span></span>
+<span class="giallo-l"><span>    1239:    83 7d fc 02              cmp    DWORD PTR [rbp-0x4],0x2</span></span>
+<span class="giallo-l"><span>    123d:    74 2c                    je     126b &lt;main+0x41&gt;</span></span>
+<span class="giallo-l"><span>    123f:    48 8b 45 f0              mov    rax,QWORD PTR [rbp-0x10]</span></span>
+<span class="giallo-l"><span>    1243:    48 8b 10                 mov    rdx,QWORD PTR [rax]</span></span>
+<span class="giallo-l"><span>    1246:    48 8b 05 f3 2d 00 00     mov    rax,QWORD PTR [rip+0x2df3]</span></span>
+<span class="giallo-l"><span>    124d:    48 8d 0d e3 0d 00 00     lea    rcx,[rip+0xde3]</span></span>
+<span class="giallo-l"><span>    1254:    48 89 ce                 mov    rsi,rcx</span></span>
+<span class="giallo-l"><span>    1257:    48 89 c7                 mov    rdi,rax</span></span>
+<span class="giallo-l"><span>    125a:    b8 00 00 00 00           mov    eax,0x0</span></span>
+<span class="giallo-l"><span>    125f:    e8 ec fd ff ff           call   1050 &lt;fprintf@plt&gt;</span></span>
+<span class="giallo-l"><span>    1264:    b8 01 00 00 00           mov    eax,0x1</span></span>
+<span class="giallo-l"><span>    1269:    eb 43                    jmp    12ae &lt;main+0x84&gt;</span></span>
+<span class="giallo-l"><span>    126b:    48 8b 45 f0              mov    rax,QWORD PTR [rbp-0x10]</span></span>
+<span class="giallo-l"><span>    126f:    48 83 c0 08              add    rax,0x8</span></span>
+<span class="giallo-l"><span>    1273:    48 8b 00                 mov    rax,QWORD PTR [rax]</span></span>
+<span class="giallo-l"><span>    1276:    48 89 c7                 mov    rdi,rax</span></span>
+<span class="giallo-l"><span>    1279:    e8 2f ff ff ff           call   11ad &lt;check_license&gt;</span></span>
+<span class="giallo-l"><span>    127e:    85 c0                    test   eax,eax</span></span>
+<span class="giallo-l"><span>    1280:    75 27                    jne    12a9 &lt;main+0x7f&gt;</span></span>
+<span class="giallo-l"><span>    1282:    48 8b 05 b7 2d 00 00     mov    rax,QWORD PTR [rip+0x2db7]</span></span>
+<span class="giallo-l"><span>    ...</span></span></code></pre>
+<p>The interesting part is at offset <code>0x1280</code>:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>1280:    75 27                    jne    12a9 &lt;main+0x7f&gt;</span></span></code></pre>
+<p>This is "jump if not equal", if <code>check_license</code> returned non-zero (success), we jump over the error handling and continue to <code>app_main</code>. If it returned zero (failure), we fall through to print the error message.</p>
+<p>The byte <code>75</code> is the opcode for <code>jne</code>. For reference:</p>
+<table><thead><tr><th>opcode</th><th>instruction</th><th>effect</th></tr></thead><tbody>
+<tr><td><code>75</code></td><td><code>jne</code></td><td>jump if ZF=0 (original behavior)</td></tr>
+<tr><td><code>74</code></td><td><code>je</code></td><td>jump if ZF=1 (inverted logic)</td></tr>
+<tr><td><code>eb</code></td><td><code>jmp</code></td><td>unconditional jump (always take it)</td></tr>
+</tbody></table>
+<p>Let's verify those bytes are where we expect them:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ xxd app | grep &quot;^00001280&quot;</span></span>
+<span class="giallo-l"><span>00001280: 7527 488b 05b7 2d00 0048 8d3d bb0d 0000  u&#39;H...-..H.=....</span></span></code></pre>
+<p>There's our <code>75 27</code>. Now we patch it to <code>eb</code> to make the jump unconditional:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ cp app app_cracked</span></span>
+<span class="giallo-l"><span>$ printf &#39;\xeb&#39; | dd of=app_cracked bs=1 seek=$((0x1280)) conv=notrunc 2&gt;/dev/null</span></span></code></pre>
+<p>Let's verify the patch took:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ xxd app_cracked | grep &quot;^00001280&quot;</span></span>
+<span class="giallo-l"><span>00001280: eb27 488b 05b7 2d00 0048 8d3d bb0d 0000  .&#39;H...-..H.=....</span></span></code></pre>
+<p>And looking at the disassembly now:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ objdump -d -M intel app_cracked | grep -A 3 &quot;1279:&quot;</span></span>
+<span class="giallo-l"><span>    1279:    e8 2f ff ff ff           call   11ad &lt;check_license&gt;</span></span>
+<span class="giallo-l"><span>    127e:    85 c0                    test   eax,eax</span></span>
+<span class="giallo-l"><span>    1280:    eb 27                    jmp    12a9 &lt;main+0x7f&gt;</span></span>
+<span class="giallo-l"><span>    1282:    48 8b 05 b7 2d 00 00     mov    rax,QWORD PTR [rip+0x2db7]</span></span></code></pre>
+<p>Let's test it:</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>$ ./app_cracked wrong</span></span>
+<span class="giallo-l"><span>the meaning of life is 42</span></span>
+<span class="giallo-l"><span>$ ./app_cracked</span></span>
+<span class="giallo-l"><span>the meaning of life is 42</span></span></code></pre>
+<p>One byte changed, and the program now accepts any input! Including an empty string.</p>
+<h2 id="this-defeats-everything">This Defeats Everything<a class="zola-anchor" href="#this-defeats-everything" aria-label="Anchor link for: this-defeats-everything" style="visibility: hidden;"></a>
+</h2>
+<p>The same attack works against all our protections:</p>
+<table><thead><tr><th>protection</th><th>how to patch it</th></tr></thead><tbody>
+<tr><td>obfuscated serial</td><td>patch the comparison jump</td></tr>
+<tr><td>ed25519 signature</td><td>patch the verify_signature return check</td></tr>
+<tr><td>hwid binding</td><td>patch the memcmp result check</td></tr>
+<tr><td>all three combined</td><td>patch all three jumps</td></tr>
+</tbody></table>
+<p>The attacker doesn't need to understand cryptography. They just need to find conditional jumps after security checks and flip them.</p>
+<p>The fundamental problem is that we've been playing "gatekeeper". The secret (<code>ANSWER = 42</code>) exists in plaintext in the binary. We're putting locks on doors that lead to a room where the secret is sitting in plain sight. The attacker doesn't need a key, they can just remove the door. No matter how complicated it is.</p>
+<h1 id="iteration-5-the-secret-box">Iteration 5: The Secret Box<a class="zola-anchor" href="#iteration-5-the-secret-box" aria-label="Anchor link for: iteration-5-the-secret-box" style="visibility: hidden;"></a>
+</h1>
+<p>An interesting solution is to stop being a gatekeeper, and instead of guarding access to the secret, lock the secret itself. The idea here is that we lock some bit of information (data structure, or can even be code) inside of a "secret box" that is only accessible with a valid license. Here's how it'd look like:</p>
+<pre class="mermaid">
+  flowchart LR
+    subgraph before[GATEKEEPER - iterations 1-4]
+        direction LR
+        bin1[binary contains&lt;br&#x2F;&gt;SECRET in plaintext]
+        gate{license&lt;br&#x2F;&gt;check}
+        sec1[SECRET]
+        bin1 --&gt; gate
+        gate --&gt;|pass| sec1
+        gate --&gt;|fail| deny1[access denied]
+        patch1[patch the jump] -.-&gt;|bypass| sec1
+    end
+</pre><pre class="mermaid">
+  flowchart LR
+    subgraph after[SECRET BOX - iteration 5+]
+        direction LR
+        bin2[binary contains&lt;br&#x2F;&gt;ENCRYPTED blob]
+        key{correct&lt;br&#x2F;&gt;key?}
+        sec2[SECRET]
+        bin2 --&gt; key
+        key --&gt;|yes| sec2
+        key --&gt;|no| garbage[garbage &#x2F; crash]
+        patch2[patch the jump] -.-&gt;|still no key| garbage
+    end
+</pre>
+<p>Given this setup, patching the checks doesn't help anymore. Without the correct key, the attacker gets garbage or a crash for the secret. There's no door to remove because the secret doesn't exist in accessible form until you have the right key. The big idea here is that, the application is structured in a way where it cannot function without the secret being decrypted.</p>
+<p>Moving on, we'll use Rust for the xamples. Here, we encrypt the secret at build time:</p>
+<pre class="giallo z-code"><code data-lang="rust"><span class="giallo-l"><span class="z-keyword">fn</span><span class="z-entity z-name"> main</span><span>(</span><span>)</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> master_key</span><span class="z-keyword"> =</span><span class="z-entity z-name"> hex</span><span class="z-keyword">::</span><span class="z-entity z-name">decode</span><span>(</span><span class="z-entity z-name">env</span><span class="z-keyword">::</span><span class="z-entity z-name">var</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">MASTER_KEY</span><span class="z-punctuation z-definition z-string">&quot;</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">unwrap</span><span>(</span><span>)</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">unwrap</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> secret</span><span class="z-keyword"> =</span><span class="z-entity z-name"> env</span><span class="z-keyword">::</span><span class="z-entity z-name">var</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">SECRET</span><span class="z-punctuation z-definition z-string">&quot;</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">unwrap</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> sealed</span><span class="z-keyword"> =</span><span class="z-entity z-name"> seal</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-other">master_key</span><span>,</span><span class="z-variable z-other"> secret</span><span class="z-keyword">.</span><span class="z-entity z-name">as_bytes</span><span>(</span><span>)</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">unwrap</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> write the encrypted blob to be embedded in the binary</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> out_dir</span><span class="z-keyword"> =</span><span class="z-entity z-name"> env</span><span class="z-keyword">::</span><span class="z-entity z-name">var</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">OUT_DIR</span><span class="z-punctuation z-definition z-string">&quot;</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">unwrap</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-entity z-name">    fs</span><span class="z-keyword">::</span><span class="z-entity z-name">write</span><span>(</span><span class="z-entity z-name">format!</span><span>(</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">{</span><span class="z-string">}</span><span class="z-string">/secrets.bin</span><span class="z-punctuation z-definition z-string">&quot;</span><span>,</span><span class="z-variable z-other"> out_dir</span><span>)</span><span>,</span><span class="z-variable z-other"> sealed</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">unwrap</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>The binary now contains <code>secrets.bin</code>as  an encrypted blob. Without the master key, this is cryptographically indistinguishable from random noise.</p>
+<h2 id="so-where-s-the-key">So Where's the Key?<a class="zola-anchor" href="#so-where-s-the-key" aria-label="Anchor link for: so-where-s-the-key" style="visibility: hidden;"></a>
+</h2>
+<p>The master key isn't in the binary either. It's delivered through the license file, but encrypted so that only the correct machine can decrypt it. When we issue a license, we encrypt the master key using a <strong>transport key</strong>. This transport key is derived from two things:</p>
+<ul>
+<li><strong>the license signature</strong>: proves the license is authentic</li>
+<li><strong>the customer's HWID</strong>: ties it to their specific machine</li>
+</ul>
+<pre class="giallo z-code"><code data-lang="rust"><span class="giallo-l"><span class="z-keyword">pub</span><span class="z-keyword"> fn</span><span class="z-entity z-name"> derive_transport_key</span><span>(</span><span class="z-variable z-other">signature</span><span class="z-keyword">:</span><span class="z-keyword"> &amp;</span><span>[</span><span class="z-entity z-name">u8</span><span>]</span><span>,</span><span class="z-variable z-other"> hwid</span><span class="z-keyword">:</span><span class="z-keyword"> &amp;</span><span>[</span><span class="z-entity z-name">u8</span><span>;</span><span class="z-constant"> 32</span><span>]</span><span>)</span><span class="z-keyword"> -&gt;</span><span> [</span><span class="z-entity z-name">u8</span><span>;</span><span class="z-constant"> 32</span><span>]</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-storage"> mut</span><span class="z-variable z-other"> hasher</span><span class="z-keyword"> =</span><span class="z-entity z-name"> Sha256</span><span class="z-keyword">::</span><span class="z-entity z-name">new</span><span>(</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    hasher</span><span class="z-keyword">.</span><span class="z-entity z-name">update</span><span>(</span><span class="z-variable z-other">signature</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    hasher</span><span class="z-keyword">.</span><span class="z-entity z-name">update</span><span>(</span><span class="z-variable z-other">hwid</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    hasher</span><span class="z-keyword">.</span><span class="z-entity z-name">finalize</span><span>(</span><span>)</span><span class="z-keyword">.</span><span class="z-entity z-name">into</span><span>(</span><span>)</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>At runtime, the client derives the same transport key from its license and local HWID. If both match what was used during issuance, the transport key is correct and decryption succeeds. If either is wrong, invalid license or wrong machine, the derived key is garbage and decryption fails.</p>
+<pre class="mermaid">
+  flowchart TB
+    subgraph license[LICENSE FILE]
+        payload[payload&lt;br&#x2F;&gt;user, expiry, etc]
+        envelope[key_envelope&lt;br&#x2F;&gt;encrypted master key]
+    end
+
+    payload --&gt; sig[signature]
+    envelope --&gt; decrypt1
+
+    sig --&gt; sha[SHA-256]
+    hwid[machine HWID&lt;br&#x2F;&gt;derived at runtime] --&gt; sha
+
+    sha --&gt; transport[TRANSPORT KEY]
+    transport --&gt;|decrypts| decrypt1[AES-GCM]
+    decrypt1 --&gt; master[MASTER KEY]
+    master --&gt;|decrypts| decrypt2[AES-GCM]
+    blob[secrets.bin&lt;br&#x2F;&gt;embedded in binary] --&gt; decrypt2
+    decrypt2 --&gt; secret[SECRET]
+</pre>
+<p>The key insight here is that neither the transport key nor the master key is stored anywhere. Both are derived at runtime. An attacker can't extract what doesn't exist.</p>
+<h2 id="what-happens-when-you-patch-now">What Happens When You Patch Now?<a class="zola-anchor" href="#what-happens-when-you-patch-now" aria-label="Anchor link for: what-happens-when-you-patch-now" style="visibility: hidden;"></a>
+</h2>
+<p>Let's say an attacker patches the signature verification to always return success:</p>
+<pre class="giallo z-code"><code data-lang="c"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> flow:</span></span>
+<span class="giallo-l"><span class="z-keyword">if</span><span> (</span><span class="z-keyword">!</span><span class="z-entity z-name">verify_signature</span><span>(</span><span>)</span><span>)</span><span class="z-keyword"> return</span><span> error</span><span>;</span></span>
+<span class="giallo-l"><span>transport_key </span><span class="z-keyword">=</span><span class="z-entity z-name"> derive_key</span><span>(</span><span>license.signature</span><span>,</span><span> local_hwid</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>master_key </span><span class="z-keyword">=</span><span class="z-entity z-name"> decrypt</span><span>(</span><span>transport_key</span><span>,</span><span> key_envelope</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>secret </span><span class="z-keyword">=</span><span class="z-entity z-name"> decrypt</span><span>(</span><span>master_key</span><span>,</span><span> secrets_blob</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> after patching verify_signature() to always succeed:</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> the check passes, but license.signature is still garbage</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> transport_key = SHA256(garbage || real_hwid), wrong key</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> decrypt() fails or returns garbage</span></span></code></pre>
+<p>Patching the check doesn't end up giving the attacker access to what we encrypted at build time, which is what the application needs to function at all. The signature isn't just validated, it's <em>used</em> as input to key derivation. A forged or missing signature produces the wrong transport key, and decryption fails cryptographically.</p>
+<h2 id="the-full-decryption-flow">The Full Decryption Flow<a class="zola-anchor" href="#the-full-decryption-flow" aria-label="Anchor link for: the-full-decryption-flow" style="visibility: hidden;"></a>
+</h2>
+<p>Here's the complete <code>unseal()</code> function:</p>
+<pre class="giallo z-code"><code data-lang="rust"><span class="giallo-l"><span class="z-keyword">pub</span><span class="z-keyword"> fn</span><span class="z-entity z-name"> unseal</span><span>(</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    license_bin</span><span class="z-keyword">:</span><span class="z-keyword"> &amp;</span><span>[</span><span class="z-entity z-name">u8</span><span>]</span><span>,</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    embedded_blob</span><span class="z-keyword">:</span><span class="z-keyword"> &amp;</span><span>[</span><span class="z-entity z-name">u8</span><span>]</span><span>,</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    root_pub</span><span class="z-keyword">:</span><span class="z-keyword"> &amp;</span><span class="z-entity z-name">str</span><span>,</span></span>
+<span class="giallo-l"><span>)</span><span class="z-keyword"> -&gt;</span><span class="z-entity z-name"> Result</span><span>&lt;</span><span class="z-entity z-name">Vec</span><span>&lt;</span><span class="z-entity z-name">u8</span><span>&gt;</span><span>,</span><span class="z-entity z-name"> Error</span><span>&gt;</span><span> {</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 1. get this machine&#39;s HWID</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> hwid</span><span class="z-keyword"> =</span><span class="z-entity z-name"> get_machine_uid</span><span>(</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 2. deserialize the license</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> license</span><span class="z-keyword">:</span><span class="z-entity z-name"> LicenseFile</span><span class="z-keyword"> =</span><span class="z-entity z-name"> bincode</span><span class="z-keyword">::</span><span class="z-entity z-name">deserialize</span><span>(</span><span class="z-variable z-other">license_bin</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 3. verify the delegation chain</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span class="z-variable z-other"> license</span><span class="z-keyword">.</span><span>delegation</span><span class="z-keyword">.</span><span>signer_pub </span><span class="z-keyword">!=</span><span class="z-variable z-other"> root_pub</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">        return</span><span class="z-entity z-name"> Err</span><span>(</span><span class="z-entity z-name">Error</span><span class="z-keyword">::</span><span class="z-entity z-name">DelegationSignerMismatch</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    license</span><span class="z-keyword">.</span><span>delegation</span><span class="z-keyword">.</span><span class="z-entity z-name">verify</span><span>(</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 4. verify the license signature</span></span>
+<span class="giallo-l"><span class="z-variable z-other">    license</span><span class="z-keyword">.</span><span class="z-entity z-name">verify_signature</span><span>(</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 5. derive the transport key</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> transport_key</span><span class="z-keyword"> =</span><span class="z-entity z-name"> derive_transport_key</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-other">license</span><span class="z-keyword">.</span><span>signature</span><span>,</span><span class="z-keyword"> &amp;</span><span class="z-variable z-other">hwid</span><span>)</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 6. decrypt the master key from the key envelope</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> master_key_bytes</span><span class="z-keyword"> =</span><span class="z-entity z-name"> decrypt</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-other">transport_key</span><span>,</span><span class="z-keyword"> &amp;</span><span class="z-variable z-other">license</span><span class="z-keyword">.</span><span>key_envelope</span><span>)</span></span>
+<span class="giallo-l"><span class="z-keyword">        .</span><span class="z-entity z-name">map_err</span><span>(</span><span class="z-keyword">|</span><span class="z-variable z-other">_</span><span class="z-keyword">|</span><span class="z-entity z-name"> Error</span><span class="z-keyword">::</span><span class="z-entity z-name">HardwareMismatch</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment">  wrong HWID or wrong signature = wrong transport key, which means the app fails here</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> 7. decrypt the actual secret</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    let</span><span class="z-variable z-other"> secret</span><span class="z-keyword"> =</span><span class="z-entity z-name"> decrypt</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-other">master_key_bytes</span><span>,</span><span class="z-variable z-other"> embedded_blob</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name">    Ok</span><span>(</span><span class="z-variable z-other">secret</span><span>)</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>There's no code path to the decrypted secret without a valid license on the correct machine. The verification checks exist to provide good error messages, but the cryptography is what actually enforces the policy we wanted to enforce (more on this later).</p>
+<h1 id="iteration-6-delegation">Iteration 6: Delegation<a class="zola-anchor" href="#iteration-6-delegation" aria-label="Anchor link for: iteration-6-delegation" style="visibility: hidden;"></a>
+</h1>
+<p>We now have a cryptographically sound system, but there's an operational problem to solve.</p>
+<p>The root private key is extremely sensitive. It's the master key to the entire software protection infrastructure. Ideally you want it:</p>
+<ul>
+<li>stored offline (air-gapped)</li>
+<li>used very rarely</li>
+<li>never exposed to internet connected systems</li>
+</ul>
+<p>But licenses need to be issued frequently, possibly automatically when someone makes a purchase. You can't have an air-gapped ceremony every time someone buys your software.</p>
+<p>The solution is delegation. The root key signs a delegation that authorizes a secondary signing key, and that secondary key handles day-to-day license issuance.</p>
+<pre class="mermaid">
+  flowchart TB
+    subgraph offline[OFFLINE - air-gapped &#x2F; HSM]
+        root[root key]
+    end
+
+    subgraph online[ONLINE - issuance server]
+        signing[signing key]
+    end
+
+    subgraph customers[CUSTOMERS]
+        lic1[license.bin]
+        lic2[license.bin]
+        lic3[license.bin]
+    end
+
+    root --&gt;|signs delegation&lt;br&#x2F;&gt;once per rotation| signing
+    signing --&gt;|signs licenses&lt;br&#x2F;&gt;on each purchase| lic1
+    signing --&gt; lic2
+    signing --&gt; lic3
+</pre><h2 id="the-delegation-structure">The Delegation Structure<a class="zola-anchor" href="#the-delegation-structure" aria-label="Anchor link for: the-delegation-structure" style="visibility: hidden;"></a>
+</h2>
+<p>Here's the delegation struct:</p>
+<pre class="giallo z-code"><code data-lang="rust"><span class="giallo-l"><span class="z-keyword">pub</span><span class="z-storage z-type"> struct</span><span class="z-entity z-name"> Delegation</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> signer_pub</span><span class="z-keyword">:</span><span> [</span><span class="z-entity z-name">u8</span><span>;</span><span class="z-constant"> 32</span><span>]</span><span>,</span><span class="z-punctuation z-definition z-comment">     //</span><span class="z-comment"> root public key</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> delegate_pub</span><span class="z-keyword">:</span><span> [</span><span class="z-entity z-name">u8</span><span>;</span><span class="z-constant"> 32</span><span>]</span><span>,</span><span class="z-punctuation z-definition z-comment">   //</span><span class="z-comment"> signing key public key</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> signature</span><span class="z-keyword">:</span><span class="z-entity z-name"> Vec</span><span>&lt;</span><span class="z-entity z-name">u8</span><span>&gt;</span><span>,</span><span class="z-punctuation z-definition z-comment">       //</span><span class="z-comment"> root&#39;s signature over (signer_pub || delegate_pub)</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">impl</span><span class="z-entity z-name"> Delegation</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-keyword"> fn</span><span class="z-entity z-name"> message</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span>)</span><span class="z-keyword"> -&gt;</span><span class="z-entity z-name"> Vec</span><span>&lt;</span><span class="z-entity z-name">u8</span><span>&gt;</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">        let</span><span class="z-storage"> mut</span><span class="z-variable z-other"> msg</span><span class="z-keyword"> =</span><span class="z-entity z-name"> Vec</span><span class="z-keyword">::</span><span class="z-entity z-name">with_capacity</span><span>(</span><span class="z-constant">64</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        msg</span><span class="z-keyword">.</span><span class="z-entity z-name">extend_from_slice</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span class="z-keyword">.</span><span>signer_pub</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        msg</span><span class="z-keyword">.</span><span class="z-entity z-name">extend_from_slice</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span class="z-keyword">.</span><span>delegate_pub</span><span>)</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        msg</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-keyword"> fn</span><span class="z-entity z-name"> verify</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span>)</span><span class="z-keyword"> -&gt;</span><span class="z-entity z-name"> Result</span><span>&lt;</span><span>(</span><span>)</span><span>,</span><span class="z-entity z-name"> Error</span><span>&gt;</span><span> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">        let</span><span class="z-variable z-other"> verifying_key</span><span class="z-keyword"> =</span><span class="z-entity z-name"> VerifyingKey</span><span class="z-keyword">::</span><span class="z-entity z-name">from_bytes</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span class="z-keyword">.</span><span>signer_pub</span><span>)</span></span>
+<span class="giallo-l"><span class="z-keyword">            .</span><span class="z-entity z-name">map_err</span><span>(</span><span class="z-keyword">|</span><span class="z-variable z-other">_</span><span class="z-keyword">|</span><span class="z-entity z-name"> Error</span><span class="z-keyword">::</span><span class="z-entity z-name">InvalidDelegation</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">        let</span><span class="z-variable z-other"> signature</span><span class="z-keyword"> =</span><span class="z-entity z-name"> Signature</span><span class="z-keyword">::</span><span class="z-entity z-name">from_slice</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span class="z-keyword">.</span><span>signature</span><span>)</span></span>
+<span class="giallo-l"><span class="z-keyword">            .</span><span class="z-entity z-name">map_err</span><span>(</span><span class="z-keyword">|</span><span class="z-variable z-other">_</span><span class="z-keyword">|</span><span class="z-entity z-name"> Error</span><span class="z-keyword">::</span><span class="z-entity z-name">InvalidDelegation</span><span>)</span><span class="z-keyword">?</span><span>;</span></span>
+<span class="giallo-l"><span class="z-variable z-other">        verifying_key</span></span>
+<span class="giallo-l"><span class="z-keyword">            .</span><span class="z-entity z-name">verify_strict</span><span>(</span><span class="z-keyword">&amp;</span><span class="z-variable z-language">self</span><span class="z-keyword">.</span><span class="z-entity z-name">message</span><span>(</span><span>)</span><span>,</span><span class="z-keyword"> &amp;</span><span class="z-variable z-other">signature</span><span>)</span></span>
+<span class="giallo-l"><span class="z-keyword">            .</span><span class="z-entity z-name">map_err</span><span>(</span><span class="z-keyword">|</span><span class="z-variable z-other">_</span><span class="z-keyword">|</span><span class="z-entity z-name"> Error</span><span class="z-keyword">::</span><span class="z-entity z-name">InvalidDelegation</span><span>)</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>The license file includes this delegation, creating a verifiable chain:</p>
+<pre class="giallo z-code"><code data-lang="rust"><span class="giallo-l"><span class="z-keyword">pub</span><span class="z-storage z-type"> struct</span><span class="z-entity z-name"> LicenseFile</span><span> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> payload</span><span class="z-keyword">:</span><span class="z-entity z-name"> LicensePayload</span><span>,</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> delegation</span><span class="z-keyword">:</span><span class="z-entity z-name"> Delegation</span><span>,</span><span class="z-punctuation z-definition z-comment">      //</span><span class="z-comment"> proof that the signer was authorized</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> signature</span><span class="z-keyword">:</span><span class="z-entity z-name"> Vec</span><span>&lt;</span><span class="z-entity z-name">u8</span><span>&gt;</span><span>,</span><span class="z-punctuation z-definition z-comment">          //</span><span class="z-comment"> signer&#39;s signature over payload</span></span>
+<span class="giallo-l"><span class="z-keyword">    pub</span><span class="z-variable z-other"> key_envelope</span><span class="z-keyword">:</span><span class="z-entity z-name"> Vec</span><span>&lt;</span><span class="z-entity z-name">u8</span><span>&gt;</span><span>,</span><span class="z-punctuation z-definition z-comment">       //</span><span class="z-comment"> encrypted master key</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>When verifying, the client checks:</p>
+<ol>
+<li><code>delegation.signer_pub == root_pub</code> (the root key embedded in the binary)</li>
+<li>the delegation signature is valid (root actually signed this delegation)</li>
+<li>the license signature is valid (the delegated key signed this license)</li>
+</ol>
+<h2 id="why-this-matters-key-rotation">Why This Matters: Key Rotation<a class="zola-anchor" href="#why-this-matters-key-rotation" aria-label="Anchor link for: why-this-matters-key-rotation" style="visibility: hidden;"></a>
+</h2>
+<p>Imagine the signing key gets compromised: maybe an employee leaves, or there's a server breach. Without delegation, you'd have to revoke the signing key, which would invalidate all existing licenses. Customers would be upset.</p>
+<p>With delegation:</p>
+<ul>
+<li>revoke the compromised signing key</li>
+<li>create a new delegation with a new signing key</li>
+<li>existing licenses (signed by the old key) continue to work</li>
+<li>new licenses use the new key</li>
+</ul>
+<p>You can also issue time limited delegations for automatic key rotation.</p>
+<h1 id="remaining-attack-vectors">Remaining Attack Vectors<a class="zola-anchor" href="#remaining-attack-vectors" aria-label="Anchor link for: remaining-attack-vectors" style="visibility: hidden;"></a>
+</h1>
+<p>No system is perfect. A sufficiently motivated attacker with enough resources could still dump the memory of the running process.</p>
+<p>Consider this scenario: attach a debugger and dump the decrypted secret from RAM after <code>unseal()</code> succeeds. This is the fundamental limitation of any software only protection: at some point, the secret must exist in plaintext in memory for the program to use it. An attacker with <code>ptrace</code> access (or equivalent) can pause execution right after decryption and read the secret directly from the process's address space. This is where the battle moves from cryptography to obfuscation and anti debugging techniques like detecting debugger attachment, encrypting values in memory between uses, or using hardware enclaves (SGX, TrustZone) to keep secrets out of main RAM entirely.</p>
+<p>Or someone could reverse engineer and find where the decrypted master key is used after decryption. Even if the secret itself is protected, the key might be extractable.</p>
+<p>There are mitigations for these (anti-debugging, obfuscation, code virtualization), but they're outside the scope of this document. They also trade code clarity for security-through-obscurity, which is a tradeoff worth understanding before making.</p>
+<h1 id="conclusion">Conclusion<a class="zola-anchor" href="#conclusion" aria-label="Anchor link for: conclusion" style="visibility: hidden;"></a>
+</h1>
+<p>And here we are. We started with a easily crackable serial check and ended up with a cryptographically "sound" software protection system. Throughout the post we explored:</p>
+<ol>
+<li>hardcoded secrets get found instantly with <code>strings</code></li>
+<li>obfuscation hides secrets but doesn't truly protect them</li>
+<li>digital signatures prevent forgery</li>
+<li>hardware binding prevents casual sharing</li>
+<li>binary patching defeats all gatekeeper style protections</li>
+<li>encrypting the secret itself defeats binary patching</li>
+<li>delegation chains make key management possible</li>
+</ol>
+<p>The important shift happens at iteration 5. Before that, we were just gatekeepers, checking credentials at the door while the secret sat in plain sight behind us. After, the secret itself is locked, and only the correct cryptographic key can reveal it.</p>
+<p>Where you stop on this ladder depends on your goals. For some products, deterring casual sharing is enough. For others, especially where high value IP is at stake, the extra complexity of cryptographic dependency and key management is worth it.</p>
+<p>But we have to face the reality of it: if the CPU can run it, a human can eventually crack it. At some point, the secret has to exist in plaintext in RAM for the program to do its job. This realization usually leaves a bitter taste in my mouth. If a dedicated person with a debugger can always eventually "win," why even bother with all this?</p>
+<p>It comes down to <strong>security through economics</strong>.</p>
+<p>The goal isn't to be mathematically "unbreakable" in an environment you don't control. That's a fantasy. The goal is to shift the cost of the attack. By the way of moving from simple gatekeeping to cryptographic dependency, the barrier has been moved from "anyone with a hex editor" to "a dedicated professional."</p>
+<p>The meaning of life is still 42. But now someone has to work for it.</p>
+
+      </article>
+
+      
+      
+
+      
+      
+    </div>
+
+    
+
+
+<footer>
+  <div class="left">
+    <div class="copyright">
+      
+      
+    </div>
+  </div>
+
+  <div class="right">
+    
+    
+      
+    
+    
+    <a id="rss-btn" href="https://seg6.space/posts/rss.xml">RSS</a>
+    
+    
+
+    
+    
+    
+    <button id="theme-toggle" aria-label="theme switch">
+      <span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z" fill="currentColor"></path></svg>
+</span>
+      <span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z" fill="currentColor"></path></svg>
+</span>
+    </button>
+    
+  </div>
+</footer>
+
+
+
+
+<dialog id="rss-mask">
+  <div>
+    <a href="https:&#x2F;&#x2F;seg6.space&#x2F;posts&#x2F;rss.xml">https:&#x2F;&#x2F;seg6.space&#x2F;posts&#x2F;rss.xml</a>
+    
+    
+    <button autofocus aria-label="copy" data-link="https:&#x2F;&#x2F;seg6.space&#x2F;posts&#x2F;rss.xml" data-copy-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" data-check-icon="&lt;svg xmlns=&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2000&#x2F;svg&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;18&quot; height=&quot;18&quot;&gt;&lt;path d=&quot;M10.0007 15.1709L19.1931 5.97852L20.6073 7.39273L10.0007 17.9993L3.63672 11.6354L5.05093 10.2212L10.0007 15.1709Z&quot; fill=&quot;currentColor&quot;&gt;&lt;&#x2F;path&gt;&lt;&#x2F;svg&gt;
+" >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M6.9998 6V3C6.9998 2.44772 7.44752 2 7.9998 2H19.9998C20.5521 2 20.9998 2.44772 20.9998 3V17C20.9998 17.5523 20.5521 18 19.9998 18H16.9998V20.9991C16.9998 21.5519 16.5499 22 15.993 22H4.00666C3.45059 22 3 21.5554 3 20.9991L3.0026 7.00087C3.0027 6.44811 3.45264 6 4.00942 6H6.9998ZM5.00242 8L5.00019 20H14.9998V8H5.00242ZM8.9998 6H16.9998V16H18.9998V4H8.9998V6Z" fill="currentColor"></path></svg>
+
+    </button>
+  </div>
+</dialog>
+
+
+
+  </main>
+</div>
+
+  
+<script src="/js/lightense.min.js"></script>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+
+  <script src="https://seg6.space/js/main.js"></script>
+</body>
+
+</html>
