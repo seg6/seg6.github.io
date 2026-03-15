@@ -1,0 +1,106 @@
+---
+import Base from './Base.astro';
+import TOC from '../components/TOC.astro';
+import ReadingProgress from '../components/ReadingProgress.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  date: Date;
+  headings: { depth: number; slug: string; text: string }[];
+  toc: boolean;
+  mermaid?: boolean;
+}
+
+const { title, description, date, headings, toc, mermaid } = Astro.props;
+
+const formattedDate = date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+}).toLowerCase();
+
+---
+
+<Base title={title} description={description}>
+  <div class="post-back">
+    <a href="/posts">&larr; back to index</a>
+  </div>
+
+  <div class="dossier-header">
+    <div class="dossier-field subject">
+      <span class="dossier-label">subject</span>
+      <span class="dossier-value">{title}</span>
+    </div>
+    <div class="dossier-field">
+      <span class="dossier-label">date</span>
+      <span class="dossier-value">{formattedDate}</span>
+    </div>
+    <div class="dossier-field">
+      <span class="dossier-label">re</span>
+      <span class="dossier-value">{description}</span>
+    </div>
+    <hr class="dossier-divider" />
+  </div>
+
+  <div class="post-content-wrapper">
+    {toc && <TOC headings={headings} />}
+    <article class="post-prose">
+      <slot />
+    </article>
+  </div>
+
+  <ReadingProgress />
+
+</Base>
+
+<script>
+  async function initMermaid() {
+    const nodes = document.querySelectorAll('pre.mermaid');
+    if (nodes.length === 0) return;
+    const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+    nodes.forEach(node => node.removeAttribute('data-processed'));
+    await mermaid.run({ nodes });
+  }
+
+  function initCodeBlocks() {
+    document.querySelectorAll('.post-prose pre').forEach(pre => {
+      if (pre.classList.contains('mermaid')) return;
+      if (pre.parentElement?.classList.contains('code-block-wrapper')) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'code-block-wrapper';
+
+      const code = pre.querySelector('code');
+      const lang = code?.className?.match(/language-(\w+)/)?.[1];
+
+      if (lang) {
+        const label = document.createElement('span');
+        label.className = 'code-lang';
+        label.textContent = lang;
+        wrapper.appendChild(label);
+      }
+
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'copy';
+      btn.addEventListener('click', () => {
+        const text = code?.textContent || pre.textContent || '';
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = 'copied';
+          setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+        });
+      });
+      wrapper.appendChild(btn);
+
+      pre.parentNode?.insertBefore(wrapper, pre);
+      wrapper.appendChild(pre);
+    });
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    initCodeBlocks();
+    initMermaid();
+  });
+</script>

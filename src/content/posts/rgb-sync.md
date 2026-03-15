@@ -1,14 +1,9 @@
-+++
-title = "Gave My RGB Fans a Job: 38-Pixel Screen Mirror"
-description = "Using a custom LED map to mirror screen colors across RGB fans, RAM, and pump lighting."
-date = 2025-12-24
-
-[extra]
-lang = "en"
-toc = false
-comment = false
-math = false
-+++
+---
+title: "gave my rgb fans a job: 38-pixel screen mirror"
+description: "using a custom led map to mirror screen colors across rgb fans, ram, and pump lighting."
+date: 2025-12-24
+toc: false
+---
 
 <iframe
   src="https://www.youtube.com/embed/gGB5INrGfZs?si=JD11j49CDIb4Kzzm"
@@ -25,11 +20,11 @@ I recently picked up a second-hand build with a Ryzen 7 7800X3D and an RTX 5070 
 
 The case came with RGB everywhere: RAM, pump, and the fans. I wanted to do something with it other than a rainbow cycle or static color, so I wrote a Python script to mirror the screen onto the components. The idea is that blue sky at the top of the frame means the top components go blue, while lava at the bottom means the bottom fans go red.
 
-# The Wiring Constraint
+# the wiring constraint
 
 The catch is that the fans are daisy-chained; meaning bottom intake, top exhaust, and rear exhaust all on one controller. I can't address them individually, so if I send a color, the entire perimeter lights up at once. This means no proper pixel map is possible (at least until I fix this issue), just a *best-effort* layout that works around the wiring.
 
-# Spatial Logic
+# spatial logic
 
 I built a simple tool to click through a grid and assign LEDs to screen coordinates. The pump samples left-center at 35% width, the RAM samples dead center around 55–65%, and the fans are mapped to the far right edge at 85%.
 

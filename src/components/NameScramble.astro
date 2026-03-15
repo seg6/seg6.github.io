@@ -1,0 +1,44 @@
+---
+interface Props {
+  text: string;
+}
+const { text } = Astro.props;
+---
+
+<span class="scramble-text" data-text={text}>{text}</span>
+
+<script>
+  function scramble(el: HTMLElement) {
+    const target = el.dataset.text || '';
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%&*';
+    const duration = 600;
+    const steps = 12;
+    const interval = duration / steps;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      step++;
+      const progress = step / steps;
+      let result = '';
+      for (let i = 0; i < target.length; i++) {
+        if (i / target.length < progress) {
+          result += target[i];
+        } else {
+          result += chars[Math.floor(Math.random() * chars.length)];
+        }
+      }
+      el.textContent = result;
+      if (step >= steps) {
+        clearInterval(timer);
+        el.textContent = target;
+      }
+    }, interval);
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    const el = document.querySelector('.scramble-text');
+    if (el instanceof HTMLElement && el.closest('.site-logo')) {
+      scramble(el);
+    }
+  });
+</script>

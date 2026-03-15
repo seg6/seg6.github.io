@@ -1,14 +1,9 @@
-+++
-title = "Hijacking Chrome's Network Tab to Debug an Electron App"
-description = "Proxying native Electron FFI calls into DevTools."
-date = 2025-12-26
-
-[extra]
-lang = "en"
-toc = true
-comment = false
-math = false
-+++
+---
+title: "hijacking chrome's network tab to debug an electron app"
+description: "proxying native electron ffi calls into devtools."
+date: 2025-12-26
+toc: true
+---
 
 A while back I was working on a local-first productivity app. Think notes, files, AI chat, all running on your machine with no cloud required. The frontend was Svelte running in Electron, but the core of the app lived in a Rust backend compiled as a native Node module using Neon FFI. Storage, search, embeddings, AI inference. All Rust.
 
@@ -18,7 +13,7 @@ This was a fast-moving project. Early stage, small team, lots of experimentation
 
 Then the app started hanging.
 
-# Flying Blind
+# flying blind
 
 Not crashing. Just... freezing. The UI would lock up for 10, 20, sometimes 30+ seconds. No error messages, no crash reports. Just a stuck app and a user staring at a frozen screen wondering if they should force quit.
 
@@ -34,7 +29,7 @@ I could scatter `console.log` statements everywhere. I could add timestamps befo
 
 So I wrote a hack.
 
-# Hijacking the Network Tab
+# hijacking the network tab
 
 Chrome DevTools has a beautiful Network tab. It shows every HTTP request with timing, headers, payload, response. What if I could make my native calls show up there?
 
@@ -46,7 +41,7 @@ The plan:
 
 For streaming callbacks (like AI chat responses that come in chunks), I'd use Server-Sent Events to pipe the data back.
 
-# Building It
+# building it
 
 The app already had a clean initialization pattern. All native functions went through an `initSFFS` function that loaded the native module and wrapped the functions with a handle:
 
@@ -71,7 +66,7 @@ return {
 
 I added a flag: `--enable-debug-proxy`. When set, instead of returning direct wrappers, I'd return HTTP proxy functions.
 
-## Debug Server
+## debug server
 
 ```js
 const setupDebugServer = () => {
@@ -106,7 +101,7 @@ const setupDebugServer = () => {
 
 Nothing fancy. A basic HTTP server that routes POST requests to function calls and GET requests to SSE streams.
 
-## Proxy Functions
+## proxy functions
 
 Instead of calling the native function directly, the proxy makes an HTTP request:
 
@@ -160,7 +155,7 @@ const handlePostRequest = (req, res, fn) => {
 }
 ```
 
-## Streaming Callbacks via SSE
+## streaming callbacks via sse
 
 Some functions take callbacks. AI chat, for example, streams responses chunk by chunk. I couldn't just serialize a callback function over HTTP.
 
@@ -213,7 +208,7 @@ const setupSSE = (key, callId, originalCallback) => {
 }
 ```
 
-## Putting It Together
+## putting it together
 
 The initialization now branches based on the debug flag:
 
@@ -237,7 +232,7 @@ return {
 
 Same API surface. When debug proxy is off, direct FFI calls. When it's on, everything goes through HTTP.
 
-# What I Found
+# what i found
 
 With `--enable-debug-proxy`, I opened DevTools and watched my Network tab light up:
 

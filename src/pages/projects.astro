@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+
+const projects = [
+  { name: 'byte', desc: '6502 based fantasy console', tags: ['rust', 'emulator'], url: 'https://github.com/seg6/byte' },
+  { name: 'mmproxy-rs', desc: 'rust implementation of tcp + udp proxy protocol', tags: ['rust', 'networking'], url: 'https://github.com/saiko-tech/mmproxy-rs' },
+  { name: 'async-fred-session', desc: 'redis backed session store for async-session using fred.rs', tags: ['rust', 'async'], url: 'https://github.com/seg6/async-fred-session' },
+  { name: 'slmp', desc: 'slmp client library for c#', tags: ['c#', 'industrial'], url: 'https://github.com/seg6/SLMP' },
+  { name: 'pox', desc: 'lox ast-walking interpreter', tags: ['python', 'language'], url: 'https://github.com/seg6/pox' },
+  { name: 'arche', desc: 'state management for pygame', tags: ['python', 'gamedev'], url: 'https://github.com/seg6/arche' },
+  { name: 'raytracer', desc: 'pure c99 raytracer', tags: ['c', 'graphics'], url: 'https://github.com/seg6/raytracer' },
+];
+---
+
+<Base title="projects" description="the registry — project showcase">
+  <div class="log-header">
+    <h1>projects</h1>
+    <span class="count">{projects.length} entries</span>
+  </div>
+
+  <div class="registry-grid">
+    {projects.map((project, i) => (
+      <a href={project.url} target="_blank" rel="noopener" class="registry-card stagger-in" style={`animation-delay: ${i * 60}ms`}>
+        <span class="card-name">{project.name}</span>
+        <div class="card-divider"></div>
+        <span class="card-desc">{project.desc}</span>
+        <div class="card-footer">
+          <span class="card-tags">{project.tags.join(' // ')}</span>
+          <span class="card-link">gh &rarr;</span>
+        </div>
+      </a>
+    ))}
+  </div>
+</Base>

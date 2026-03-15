@@ -1,16 +1,11 @@
-+++
-title = "Making macOS Bearable"
-description = "My workflow on macOS with Aerospace, Tmux, and keyboard-first navigation."
-date = 2025-12-09
+---
+title: "making macos bearable"
+description: "my workflow on macos with aerospace, tmux, and keyboard-first navigation."
+date: 2025-12-09
+toc: true
+---
 
-[extra]
-lang = "en"
-toc = true
-comment = false
-math = false
-+++
-
-# Intro
+# intro
 
 Ideally, a computer system should feel like an extension of your body. When you pick up a cup of coffee, you don't consciously think, "I need to engage my bicep, extend my forearm, and grasp with my fingers." You just think "drink coffee," and your body complies.
 
@@ -20,7 +15,7 @@ Recently, I started using macOS (my workplace issued me an M4 Pro MacBook, and I
 
 So I set out to fix this for myself.
 
-# The "Where's Waldo" Problem
+# the "where's waldo" problem
 
 Apple wants you to use Mission Control. They want you to swipe up with three fingers, see a scattered mosaic of every window you have open, and then use your eyes to scan for the one you want.
 
@@ -35,7 +30,7 @@ My hierarchy of navigation is as follows:
 2.  **Fuzzy Finding:** I know *what* I want, but not where it is. I type three letters into Raycast, and it appears.
 3.  **Visual Search:** This is the fallback I try to never use.
 
-# Encoding Location with Aerospace
+# encoding location with aerospace
 
 The default macOS window model is "floating." Windows pile on top of each other, you drag them around manually, and Spaces lets you swipe between virtual desktops that have no enforced structure. It's flexible, but flexibility without constraints is just chaos.
 
@@ -58,7 +53,7 @@ run = 'move-node-to-workspace 2'
 
 This turns navigation into muscle memory. `Cmd-2` is not "Switch to Terminal"; `Cmd-2` is just the physical reflex of "I want to code." I don't look. I just hit the key combination, and the active workspace changes.
 
-# Development Workspace
+# development workspace
 
 Inside Workspace 2 lives Ghostty, running Tmux.
 
@@ -78,7 +73,7 @@ To glue it all together, I wrote a custom Rust tool called `ws`.
 
 When I hit `Alt-s`, a fuzzy finder pops up *over* my current work. I pick a project, and `ws` instantly attaches to that session or spins up a new environment with my editor (`helix`) and file manager (`fx`) ready to go. It maintains a stack-based history, so I can jump to a project, fix a bug, and hit "Back" to return to exactly where I was.
 
-# The Language of Motion
+# the language of motion
 
 Humans are incredibly good at language. We are hardwired for syntax, grammar, and structure. We are *not* hardwired to hunt for pixels on a glowing rectangle.
 
@@ -86,9 +81,9 @@ This is why I use modal editing. It stops text manipulation from being a manual 
 
 The problem with modern OS design is that it abandons this linguistic efficiency for visual clutter.
 
-# Bypassing the Mouse
+# bypassing the mouse
 
-Of course, I still use the mouse. I’m not a zealot. But for 90% of web browsing, lifting my hand to the mouse is unnecessary friction.
+Of course, I still use the mouse. I'm not a zealot. But for 90% of web browsing, lifting my hand to the mouse is unnecessary friction.
 
 I use Vimium in the browser.
 
@@ -100,6 +95,6 @@ I recently added Homerow to the mix, which brings this same "look and type" navi
 
 ---
 
-By layering Aerospace, Tmux, and modal editing, I’ve tried to replicate that "extension of the body" feeling. The goal isn't to be a "power user" for the sake of it. The goal is to remove the lag between thinking "I want to do X" and the computer actually doing it.
+By layering Aerospace, Tmux, and modal editing, I've tried to replicate that "extension of the body" feeling. The goal isn't to be a "power user" for the sake of it. The goal is to remove the lag between thinking "I want to do X" and the computer actually doing it.
 
 The [dotfiles](https://github.com/seg6/dotfiles) and the relevant [Hacker News](https://news.ycombinator.com/item?id=46213385) discussion.
