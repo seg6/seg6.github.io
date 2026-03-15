@@ -1,0 +1,16 @@
+---
+import NameScramble from './NameScramble.astro';
+---
+
+<header class="site-header" transition:name="header" transition:animate="none">
+  <div class="site-logo">
+    <a href="/"><NameScramble text="seg6" /></a>
+  </div>
+  <nav class="site-nav">
+    <a href="/posts/">posts</a>
+    <a href="/projects/">projects</a>
+    <a href="/about/">about</a>
+    <a href="/posts/rss.xml">rss</a>
+    <button class="theme-toggle" aria-label="toggle theme">light</button>
+  </nav>
+</header>

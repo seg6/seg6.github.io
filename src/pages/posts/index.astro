@@ -1,0 +1,29 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+function formatDate(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+---
+
+<Base title="posts" description="all posts">
+  <div class="log-header">
+    <h1>posts</h1>
+    <span class="count">{posts.length} entries</span>
+  </div>
+
+  <div class="log-list">
+    {posts.map(post => (
+      <a href={`/posts/${post.id}/`} class="log-entry">
+        <span class="log-date">{formatDate(post.data.date)}</span>
+        <span class="log-title">{post.data.title.toLowerCase()}</span>
+        <span class="log-arrow">&rarr;</span>
+      </a>
+    ))}
+  </div>
+</Base>

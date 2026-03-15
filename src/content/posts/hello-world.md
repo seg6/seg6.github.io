@@ -1,18 +1,16 @@
-+++
-title = "Hello, World!"
-description = "hello"
-date = 2025-12-01
-
-[extra]
-lang = "en"
-toc = false
-comment = false
-math = true
-+++
+---
+title: "hello, world!"
+description: "hello"
+date: 2025-12-01
+math: true
+toc: false
+---
 
 Obligatory first post. Here's Euler's identity:
 
-$$e^{i\pi} + 1 = 0$$
+$$
+e^{i\pi} + 1 = 0
+$$
 
 And here's some weird looking Python code that does... something:
 

@@ -1,15 +1,10 @@
-+++
-title = "Building a Software Protection System From First Principles"
-description = "A build-and-break walkthrough of license protection."
-date = 2026-03-05
-
-[extra]
-lang = "en"
-toc = true
-comment = false
-math = false
-mermaid = true
-+++
+---
+title: "building a software protection system from first principles"
+description: "a build-and-break walkthrough of license protection."
+date: 2026-03-05
+toc: true
+mermaid: true
+---
 
 Let's walk through building a software protection system from first principles. I'm purposefully not elaborating any properties of such a system upfront. We'll be iteratively exploring them as we build and break each attempt. In the end, we'll end up with a practical solution.
 
@@ -17,7 +12,7 @@ Before implementing any licensing system, define what "good enough" means for yo
 
 Think of this post as a ladder, not a mandatory checklist. You can stop at any iteration if it meets your threat model, or keep going if your requirements demand stronger protection.
 
-# Where Things Start: An application
+# where things start: an application
 
 We will start with putting together a simple application that does something useful. It'll print the meaning of life.
 
@@ -46,7 +41,7 @@ There we have it, an application that provides value. The `ANSWER` is our secret
 
 The question we're trying to answer: how do we make sure only paying customers can run this?
 
-# Iteration 1: Hardcoded Serial
+# iteration 1: hardcoded serial
 
 The most straightforward approach is to ask for a password before doing anything useful.
 
@@ -91,7 +86,7 @@ the meaning of life is 42
 
 This works! We could ship this, but let's see how it holds up.
 
-## Cracking It
+## cracking it
 
 The problem with hardcoded strings is that they're just sitting there in the binary, waiting to be found.
 
@@ -102,7 +97,7 @@ XXXX-YYYY-ZZZZ
 
 That took about half a second. The attacker now has a valid serial.
 
-# Iteration 2: Obfuscated Serial
+# iteration 2: obfuscated serial
 
 Since plaintext strings are too easy to find, let's hide the serial. We can XOR it, hash it, or use any number of obfuscation techniques.
 
@@ -165,7 +160,7 @@ Here's the first realization we should have: obfuscation is a security through o
 
 As a fun side note, modern reverse engineering tools often auto detect simple XOR encoded blobs, which makes this style of obfuscation even less effective in practice!
 
-# Iteration 3: Digital Signatures
+# iteration 3: digital signatures
 
 The real problem with iterations 1 and 2 is that the secret has to be shared. One person buys the software, posts the serial online, and now everyone can use it.
 
@@ -224,7 +219,7 @@ Now a potential attacker is in a tough spot. They can't forge a license because 
 
 This is a significant improvement, you'd need to break elliptic curve cryptography to forge a license.
 
-# Iteration 4: Hardware Binding
+# iteration 4: hardware binding
 
 Signatures solved the forgery problem, but they don't prevent "casual" sharing. One customer buys a license, uploads the file somewhere, and everyone just copies it. The signature is valid no matter who runs the application.
 
@@ -273,7 +268,7 @@ Sharing a license file is now pointless, it only works on the machine it was iss
 
 One thing to note: HWIDs are a bit "brittle". If a user replaces their network card, upgrades their BIOS, or makes other hardware changes, the HWID might change and invalidate their license. Often, robust implementations use a fuzzy match (e.g., "at least 3 of 5 hardware attributes must match") or multi factor HWIDs to avoid annoying legitimate customers. We use a single-factor HWID for simplicity.
 
-# Binary Patching
+# binary patching
 
 At this point we've built up a reasonable set of protections:
 
@@ -376,7 +371,7 @@ the meaning of life is 42
 
 One byte changed, and the program now accepts any input! Including an empty string.
 
-## This Defeats Everything
+## this defeats everything
 
 The same attack works against all our protections:
 
@@ -391,11 +386,11 @@ The attacker doesn't need to understand cryptography. They just need to find con
 
 The fundamental problem is that we've been playing "gatekeeper". The secret (`ANSWER = 42`) exists in plaintext in the binary. We're putting locks on doors that lead to a room where the secret is sitting in plain sight. The attacker doesn't need a key, they can just remove the door. No matter how complicated it is.
 
-# Iteration 5: The Secret Box
+# iteration 5: the secret box
 
 An interesting solution is to stop being a gatekeeper, and instead of guarding access to the secret, lock the secret itself. The idea here is that we lock some bit of information (data structure, or can even be code) inside of a "secret box" that is only accessible with a valid license. Here's how it'd look like:
 
-{% mermaid() %}
+<pre class="mermaid">
 flowchart LR
     subgraph before[GATEKEEPER - iterations 1-4]
         direction LR
@@ -407,9 +402,9 @@ flowchart LR
         gate -->|fail| deny1[access denied]
         patch1[patch the jump] -.->|bypass| sec1
     end
-{% end %}
+</pre>
 
-{% mermaid() %}
+<pre class="mermaid">
 flowchart LR
     subgraph after[SECRET BOX - iteration 5+]
         direction LR
@@ -421,7 +416,7 @@ flowchart LR
         key -->|no| garbage[garbage / crash]
         patch2[patch the jump] -.->|still no key| garbage
     end
-{% end %}
+</pre>
 
 Given this setup, patching the checks doesn't help anymore. Without the correct key, the attacker gets garbage or a crash for the secret. There's no door to remove because the secret doesn't exist in accessible form until you have the right key. The big idea here is that, the application is structured in a way where it cannot function without the secret being decrypted.
 
@@ -441,7 +436,7 @@ fn main() {
 
 The binary now contains `secrets.bin`as  an encrypted blob. Without the master key, this is cryptographically indistinguishable from random noise.
 
-## So Where's the Key?
+## so where's the key?
 
 The master key isn't in the binary either. It's delivered through the license file, but encrypted so that only the correct machine can decrypt it. When we issue a license, we encrypt the master key using a **transport key**. This transport key is derived from two things:
 
@@ -459,7 +454,7 @@ pub fn derive_transport_key(signature: &[u8], hwid: &[u8; 32]) -> [u8; 32] {
 
 At runtime, the client derives the same transport key from its license and local HWID. If both match what was used during issuance, the transport key is correct and decryption succeeds. If either is wrong, invalid license or wrong machine, the derived key is garbage and decryption fails.
 
-{% mermaid() %}
+<pre class="mermaid">
 flowchart TB
     subgraph license[LICENSE FILE]
         payload[payload<br/>user, expiry, etc]
@@ -478,11 +473,11 @@ flowchart TB
     master -->|decrypts| decrypt2[AES-GCM]
     blob[secrets.bin<br/>embedded in binary] --> decrypt2
     decrypt2 --> secret[SECRET]
-{% end %}
+</pre>
 
 The key insight here is that neither the transport key nor the master key is stored anywhere. Both are derived at runtime. An attacker can't extract what doesn't exist.
 
-## What Happens When You Patch Now?
+## what happens when you patch now?
 
 Let's say an attacker patches the signature verification to always return success:
 
@@ -501,7 +496,7 @@ secret = decrypt(master_key, secrets_blob);
 
 Patching the check doesn't end up giving the attacker access to what we encrypted at build time, which is what the application needs to function at all. The signature isn't just validated, it's *used* as input to key derivation. A forged or missing signature produces the wrong transport key, and decryption fails cryptographically.
 
-## The Full Decryption Flow
+## the full decryption flow
 
 Here's the complete `unseal()` function:
 
@@ -543,7 +538,7 @@ pub fn unseal(
 
 There's no code path to the decrypted secret without a valid license on the correct machine. The verification checks exist to provide good error messages, but the cryptography is what actually enforces the policy we wanted to enforce (more on this later).
 
-# Iteration 6: Delegation
+# iteration 6: delegation
 
 We now have a cryptographically sound system, but there's an operational problem to solve.
 
@@ -557,7 +552,7 @@ But licenses need to be issued frequently, possibly automatically when someone m
 
 The solution is delegation. The root key signs a delegation that authorizes a secondary signing key, and that secondary key handles day-to-day license issuance.
 
-{% mermaid() %}
+<pre class="mermaid">
 flowchart TB
     subgraph offline[OFFLINE - air-gapped / HSM]
         root[root key]
@@ -577,9 +572,9 @@ flowchart TB
     signing -->|signs licenses<br/>on each purchase| lic1
     signing --> lic2
     signing --> lic3
-{% end %}
+</pre>
 
-## The Delegation Structure
+## the delegation structure
 
 Here's the delegation struct:
 
@@ -627,7 +622,7 @@ When verifying, the client checks:
 2. the delegation signature is valid (root actually signed this delegation)
 3. the license signature is valid (the delegated key signed this license)
 
-## Why This Matters: Key Rotation
+## why this matters: key rotation
 
 Imagine the signing key gets compromised: maybe an employee leaves, or there's a server breach. Without delegation, you'd have to revoke the signing key, which would invalidate all existing licenses. Customers would be upset.
 
@@ -640,17 +635,17 @@ With delegation:
 
 You can also issue time limited delegations for automatic key rotation.
 
-# Remaining Attack Vectors
+# remaining attack vectors
 
 No system is perfect. A sufficiently motivated attacker with enough resources could still dump the memory of the running process.
 
 Consider this scenario: attach a debugger and dump the decrypted secret from RAM after `unseal()` succeeds. This is the fundamental limitation of any software only protection: at some point, the secret must exist in plaintext in memory for the program to use it. An attacker with `ptrace` access (or equivalent) can pause execution right after decryption and read the secret directly from the process's address space. This is where the battle moves from cryptography to obfuscation and anti debugging techniques like detecting debugger attachment, encrypting values in memory between uses, or using hardware enclaves (SGX, TrustZone) to keep secrets out of main RAM entirely.
-  
+
 Or someone could reverse engineer and find where the decrypted master key is used after decryption. Even if the secret itself is protected, the key might be extractable.
-  
+
 There are mitigations for these (anti-debugging, obfuscation, code virtualization), but they're outside the scope of this document. They also trade code clarity for security-through-obscurity, which is a tradeoff worth understanding before making.
 
-# Conclusion
+# conclusion
 
 And here we are. We started with a easily crackable serial check and ended up with a cryptographically "sound" software protection system. Throughout the post we explored:
 
@@ -668,8 +663,8 @@ Where you stop on this ladder depends on your goals. For some products, deterrin
 
 But we have to face the reality of it: if the CPU can run it, a human can eventually crack it. At some point, the secret has to exist in plaintext in RAM for the program to do its job. This realization usually leaves a bitter taste in my mouth. If a dedicated person with a debugger can always eventually "win," why even bother with all this?
 
-It comes down to **security through economics**. 
+It comes down to **security through economics**.
 
 The goal isn't to be mathematically "unbreakable" in an environment you don't control. That's a fantasy. The goal is to shift the cost of the attack. By the way of moving from simple gatekeeping to cryptographic dependency, the barrier has been moved from "anyone with a hex editor" to "a dedicated professional."
 
-The meaning of life is still 42. But now someone has to work for it. 
+The meaning of life is still 42. But now someone has to work for it.

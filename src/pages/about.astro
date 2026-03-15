@@ -1,0 +1,116 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="about" description="the operator — personnel dossier">
+  <div class="pane-grid">
+    <div class="pane pane-profile stagger-in">
+      <div class="pane-tab">profile</div>
+      <div class="pane-content">
+        <img src="/img/elma.webp" alt="seg6" class="about-avatar" />
+        <div class="pane-fields">
+          <div class="dossier-field">
+            <span class="dossier-label">handle</span>
+            <span class="dossier-value">seg6</span>
+          </div>
+          <div class="dossier-field">
+            <span class="dossier-label">role</span>
+            <span class="dossier-value">software engineer</span>
+          </div>
+          <div class="dossier-field">
+            <span class="dossier-label">location</span>
+            <span class="dossier-value">berlin, de</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane pane-bio stagger-in" style="animation-delay: 80ms">
+      <div class="pane-tab">readme</div>
+      <div class="pane-content pane-prose">
+        <p>
+          I like knowing how things actually work. Not the polished abstraction, the thing underneath it. I've been programming ever since I was 14, and most of my career has basically been an excuse to keep following that impulse.
+        </p>
+        <p>
+          One of the first times that really clicked for me was during an internship at an industrial automation company in İzmir, where I built an open-source SLMP library that ended up being used in production across factories in Turkey. After that, finishing my degree felt less important than continuing to build, so I dropped out and did exactly that.
+        </p>
+        <p>
+          Since then I've worked on a bit of everything: systems code, backend services, cloud infrastructure, desktop apps, and product work. None of it was especially planned. I just kept following interesting problems, and eventually that brought me to Berlin.
+        </p>
+        <p>
+          When I'm not working, I'm usually reading about how minds, organisms, or physical systems work. I'm not especially disciplined about it, I just keep getting pulled into things I want to understand better, and find interesting.
+        </p>
+        <p>
+          This blog is a place to write some of that down.
+        </p>
+      </div>
+    </div>
+
+    <div class="pane pane-bg stagger-in" style="animation-delay: 160ms">
+      <div class="pane-tab">background</div>
+      <div class="pane-content">
+        <div class="dossier-field">
+          <span class="dossier-label">education</span>
+          <span class="dossier-value">bsc eee (dropped out), izmir bakırçay university</span>
+        </div>
+        <div class="dossier-field">
+          <span class="dossier-label">stack</span>
+          <span class="dossier-value">rust, c, go, c#, lua, python, typescript</span>
+        </div>
+        <div class="dossier-field">
+          <span class="dossier-label">languages</span>
+          <span class="dossier-value">english, turkish, german</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane pane-links stagger-in" style="animation-delay: 240ms">
+      <div class="pane-tab">find me</div>
+      <div class="pane-content">
+        <div class="dossier-field">
+          <span class="dossier-label">github</span>
+          <span class="dossier-value"><a href="https://github.com/seg6">gh/seg6</a></span>
+        </div>
+        <div class="dossier-field">
+          <span class="dossier-label">email</span>
+          <span class="dossier-value">hi@seg6.space</span>
+        </div>
+        <div class="dossier-field">
+          <span class="dossier-label">linkedin</span>
+          <span class="dossier-value"><a href="https://linkedin.com/in/omer-faruk">/in/omer-faruk</a></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane pane-exp stagger-in" style="animation-delay: 320ms">
+      <div class="pane-tab">experience</div>
+      <div class="pane-content pane-content-flush">
+        <div class="exp-row">
+          <span class="exp-org">meyer sound</span>
+          <span class="exp-dates">jan 2025 – present</span>
+          <span class="exp-role">software engineer</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-org">deta</span>
+          <span class="exp-dates">jul 2023 – jan 2025</span>
+          <span class="exp-role">software engineer</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-org">sartura</span>
+          <span class="exp-dates">apr 2023 – dec 2023</span>
+          <span class="exp-role">software engineer (contract)</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-org">geotek</span>
+          <span class="exp-dates">apr 2023 – jul 2023</span>
+          <span class="exp-role">software engineer</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-org">geotek</span>
+          <span class="exp-dates">jul 2022 – sep 2022</span>
+          <span class="exp-role">intern</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</Base>

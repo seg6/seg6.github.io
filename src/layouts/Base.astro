@@ -1,0 +1,65 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  hideFooter?: boolean;
+}
+
+const { title, description = 'notes on systems, internals, and the occasional hack.', hideFooter = false } = Astro.props;
+const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{fullTitle}</title>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+    <ClientRouter />
+    <script is:inline>
+      (function() {
+        var t = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+      document.addEventListener('astro:before-swap', function(e) {
+        var t = localStorage.getItem('theme') || 'dark';
+        e.newDocument.documentElement.setAttribute('data-theme', t);
+      });
+    </script>
+  </head>
+  <body>
+    <div class="site">
+      <Header />
+      <slot />
+      {!hideFooter && <Footer />}
+    </div>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "4059827b1f784204993e06d4424de6ac"}' is:inline></script>
+    <script>
+      function initThemeToggle() {
+        const btn = document.querySelector('.theme-toggle');
+        if (!btn) return;
+        const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+        btn.textContent = theme === 'dark' ? 'light' : 'dark';
+        btn.addEventListener('click', () => {
+          const current = document.documentElement.getAttribute('data-theme');
+          const next = current === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          localStorage.setItem('theme', next);
+          btn.textContent = next === 'dark' ? 'light' : 'dark';
+        });
+      }
+      document.addEventListener('astro:page-load', initThemeToggle);
+    </script>
+  </body>
+</html>

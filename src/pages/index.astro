@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+const [featured, ...rest] = posts;
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+  }).toLowerCase();
+}
+
+const lastUpdated = posts[0]?.data.date
+  ? formatDate(posts[0].data.date)
+  : '';
+---
+
+<Base title="seg6" hideFooter>
+  <div class="bento">
+    <div class="bento-bio stagger-in">
+      <img src="/img/elma.webp" alt="seg6" class="bio-avatar" />
+      <div class="bio-name">seg6</div>
+      <div class="bio-tagline">speaks fluent segfault</div>
+      <div class="bio-description">
+        software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.
+      </div>
+      <div class="bio-links">
+        <span class="bio-email">hi@seg6.space</span>
+        <span class="bio-links-sep">//</span>
+        <a href="https://github.com/seg6">github</a>
+        <span class="bio-links-sep">//</span>
+        <a href="https://linkedin.com/in/omer-faruk">linkedin</a>
+      </div>
+    </div>
+
+    <a href={`/posts/${featured.id}/`} class="tile tile-featured stagger-in" style="animation-delay: 50ms">
+      <div class="tile-title">{featured.data.title.toLowerCase()}</div>
+      <div class="tile-meta">{formatDate(featured.data.date)} // {featured.data.description.toLowerCase()}</div>
+      <div class="tile-arrow">&rarr;</div>
+    </a>
+
+    {rest.map((post, i) => (
+      <a href={`/posts/${post.id}/`} class="tile stagger-in" style={`animation-delay: ${(i + 2) * 50}ms`}>
+        <div class="tile-title">{post.data.title.toLowerCase()}</div>
+        <div class="tile-meta">{formatDate(post.data.date)}</div>
+        <div class="tile-description">{post.data.description.toLowerCase()}</div>
+        <div class="tile-arrow">&rarr;</div>
+      </a>
+    ))}
+  </div>
+
+  <div class="status-bar">
+    {posts.length} entries // last updated {lastUpdated}
+  </div>
+</Base>

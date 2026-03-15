@@ -1,14 +1,9 @@
-+++
-title = "The Frontend Auth Middleware: Cross-Origin Iframes Without Third-Party Cookies"
-description = "A service-worker bootloader pattern for cross-origin iframe auth without third-party cookies."
-date = 2025-12-25
-
-[extra]
-lang = "en"
-toc = true
-comment = false
-math = false
-+++
+---
+title: "the frontend auth middleware: cross-origin iframes without third-party cookies"
+description: "a service-worker bootloader pattern for cross-origin iframe auth without third-party cookies."
+date: 2025-12-25
+toc: true
+---
 
 A few years ago, I worked on a multi-tenant platform. The setup:
 
@@ -25,7 +20,7 @@ I ended up solving this with service workers, and I'm still pretty happy with ho
 
 **A note on scope:** this describes a fairly specific setup. You need to control both the parent domain *and* the platform routing layer for the embedded subdomains (even if you don't control the actual app code running on them). If you're trying to embed a third-party site you have no control over, this won't help.
 
-# Why This Is Hard
+# why this is hard
 
 When you embed `alice-app1.platform.app` in an iframe on `platform.io`, the browser treats them as separate origins. Your session cookie on `platform.io` doesn't exist on `alice-app1.platform.app`. The iframe shows a login page.
 
@@ -46,7 +41,7 @@ You might think: why not host apps under `platform.io` instead, like `alice-app1
 
 **postMessage + localStorage** is what you'd normally reach for here. The parent sends a token via postMessage, the iframe stores it in localStorage, and JavaScript on each page reads it and attaches it to outgoing requests. But this requires the embedded app to include code that participates in this flow. We don't control what users deploy to their subdomains, they bring their own code. We can't require every app to implement our auth handshake. And to add to that, we already had a lot of apps in use on the platform.
 
-# The Setup
+# the setup
 
 Here's what I had to work with:
 
@@ -59,7 +54,7 @@ That third point is important: even though `alice-app1.platform.app` runs user c
 
 This reserved path was my way in.
 
-# The Idea
+# the idea
 
 Service workers can intercept HTTP requests and modify them, including adding headers. If I could install a service worker on `alice-app1.platform.app`, it could inject an auth token into every request automatically, without the user's app code needing to know about it.
 
@@ -77,11 +72,11 @@ As for the flow: to the user, this looks like a standard iframe load. Under the 
 6. Iframe navigates to `/`. Now every request, including the initial document request for the user's app, goes through the service worker, which injects the auth header.
 7. User sees their app, authenticated.
 
-# The Code
+# the code
 
 The key pieces, trimmed down. Full code is in [this gist](https://gist.github.com/seg6/79a2bef9a49c7d6b519ad994a25a7bad).
 
-## Embed Page (The Bootloader)
+## embed page (the bootloader)
 
 First, lock down service worker registration so user code can't interfere:
 
@@ -139,7 +134,7 @@ function embed_runtime_secret_key_handler(event, event_data) {
 }
 ```
 
-## Service Worker
+## service worker
 
 The worker stores the secret and injects it into all same-origin requests:
 
@@ -178,7 +173,7 @@ async function fetch_with_secret_key(request) {
 }
 ```
 
-# It Works!
+# it works!
 
 The reserved path gives me a foothold on origins I don't otherwise control. I can't touch user code, but I can serve my own code at `/__platform/*`.
 
@@ -186,7 +181,7 @@ Service workers, once registered, persist across navigations. The worker registe
 
 **A note on security:** Because the service worker stores the secret in `CacheStorage`, JavaScript running on the subdomain can technically read it. But since we use unique, per-app secrets, this only "exposes" the app to itself.
 
-## Things to Get Right
+## things to get right
 
 If you're implementing something like this:
 
