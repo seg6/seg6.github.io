@@ -1,0 +1,110 @@
+---
+interface Props {
+  enabled?: boolean;
+}
+
+const { enabled = true } = Astro.props;
+---
+
+{enabled && (
+  <section class="comments-shell" aria-label="post comments">
+    <div class="comments-headline">
+      <span class="dossier-label">thread</span>
+      <div class="comments-headline-main">
+        <span class="comments-title">discussion</span>
+        <button class="comments-toggle" type="button" aria-expanded="false">
+          open thread
+        </button>
+      </div>
+    </div>
+
+    <div class="comments-panel" hidden>
+      <div class="comments-embed"></div>
+    </div>
+  </section>
+)}
+
+<script>
+  const COMMENTS_EXPANDED_STATE_KEY = 'comments:expanded';
+
+  function getInitialGiscusTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return isDark ? 'dark_dimmed' : 'light';
+  }
+
+  function readExpandedState() {
+    try {
+      return sessionStorage.getItem(COMMENTS_EXPANDED_STATE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function writeExpandedState(isExpanded) {
+    try {
+      sessionStorage.setItem(COMMENTS_EXPANDED_STATE_KEY, isExpanded ? '1' : '0');
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  function mountGiscus(target) {
+    const script = document.createElement('script');
+    script.src = 'https://giscus.app/client.js';
+    script.setAttribute('data-repo', 'seg6/seg6.github.io');
+    script.setAttribute('data-repo-id', 'R_kgDOQc20Jw');
+    script.setAttribute('data-category', 'Announcements');
+    script.setAttribute('data-category-id', 'DIC_kwDOQc20J84C4rcP');
+    script.setAttribute('data-mapping', 'pathname');
+    script.setAttribute('data-strict', '0');
+    script.setAttribute('data-reactions-enabled', '0');
+    script.setAttribute('data-emit-metadata', '1');
+    script.setAttribute('data-input-position', 'bottom');
+    script.setAttribute('data-theme', getInitialGiscusTheme());
+    script.setAttribute('data-lang', 'en');
+    script.setAttribute('data-loading', 'lazy');
+    script.setAttribute('crossorigin', 'anonymous');
+    script.async = true;
+    target.appendChild(script);
+  }
+
+  function initCommentsToggle() {
+    document.querySelectorAll('.comments-shell').forEach((shell) => {
+      if (shell.dataset.ready === '1') return;
+      shell.dataset.ready = '1';
+
+      const btn = shell.querySelector('.comments-toggle');
+      const panel = shell.querySelector('.comments-panel');
+      const embed = shell.querySelector('.comments-embed');
+      if (!btn || !panel || !embed) return;
+
+      const setExpanded = (isExpanded) => {
+        if (isExpanded) {
+          panel.removeAttribute('hidden');
+          btn.textContent = 'hide thread';
+          btn.setAttribute('aria-expanded', 'true');
+          if (!embed.querySelector('script.giscus-script')) {
+            mountGiscus(embed);
+            const mounted = embed.querySelector('script[src="https://giscus.app/client.js"]');
+            mounted?.classList.add('giscus-script');
+          }
+        } else {
+          panel.setAttribute('hidden', '');
+          btn.textContent = 'open thread';
+          btn.setAttribute('aria-expanded', 'false');
+        }
+
+        writeExpandedState(isExpanded);
+      };
+
+      setExpanded(readExpandedState());
+
+      btn.addEventListener('click', () => {
+        const willOpen = panel.hasAttribute('hidden');
+        setExpanded(willOpen);
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initCommentsToggle);
+</script>
