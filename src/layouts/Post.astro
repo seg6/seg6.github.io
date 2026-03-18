@@ -2,6 +2,7 @@
 import Base from './Base.astro';
 import TOC from '../components/TOC.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
+import Comments from '../components/Comments.astro';
 
 interface Props {
   title: string;
@@ -10,9 +11,10 @@ interface Props {
   headings: { depth: number; slug: string; text: string }[];
   toc: boolean;
   mermaid?: boolean;
+  comments?: boolean;
 }
 
-const { title, description, date, headings, toc, mermaid } = Astro.props;
+const { title, description, date, headings, toc, mermaid, comments = true } = Astro.props;
 
 const formattedDate = date.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -48,6 +50,12 @@ const formattedDate = date.toLocaleDateString('en-US', {
     <article class="post-prose">
       <slot />
     </article>
+  </div>
+
+  <div class="post-content-wrapper">
+    <div class="post-comments-wrapper">
+      <Comments enabled={comments} />
+    </div>
   </div>
 
   <ReadingProgress />
@@ -99,8 +107,32 @@ const formattedDate = date.toLocaleDateString('en-US', {
     });
   }
 
+  function getGiscusTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return isDark ? 'dark_dimmed' : 'light';
+  }
+
+  function syncGiscusTheme() {
+    const frame = document.querySelector('iframe.giscus-frame');
+    if (!frame) return false;
+    frame.contentWindow?.postMessage(
+      { giscus: { setConfig: { theme: getGiscusTheme() } } },
+      'https://giscus.app'
+    );
+    return true;
+  }
+
+  function ensureGiscusThemeSync(attempt = 0) {
+    if (syncGiscusTheme()) return;
+    if (attempt >= 25) return;
+    setTimeout(() => ensureGiscusThemeSync(attempt + 1), 200);
+  }
+
   document.addEventListener('astro:page-load', () => {
     initCodeBlocks();
     initMermaid();
+    ensureGiscusThemeSync();
   });
+
+  document.addEventListener('theme:changed', ensureGiscusThemeSync);
 </script>

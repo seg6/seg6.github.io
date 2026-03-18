@@ -44,7 +44,7 @@ const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
       <slot />
       {!hideFooter && <Footer />}
     </div>
-    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "4059827b1f784204993e06d4424de6ac"}' is:inline></script>
+    <script defer src="https://static.seg6.space/a/s.js" is:inline></script>
     <script>
       function initThemeToggle() {
         const btn = document.querySelector('.theme-toggle');
@@ -57,6 +57,7 @@ const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
           document.documentElement.setAttribute('data-theme', next);
           localStorage.setItem('theme', next);
           btn.textContent = next === 'dark' ? 'light' : 'dark';
+          document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme: next } }));
         });
       }
       document.addEventListener('astro:page-load', initThemeToggle);
