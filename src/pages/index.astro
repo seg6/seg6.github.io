@@ -7,6 +7,7 @@ const posts = (await getCollection('posts')).sort(
 );
 
 const [featured, ...rest] = posts;
+const recent = rest.slice(0, 5);
 
 function formatDate(date: Date) {
   return date.toLocaleDateString('en-US', {
@@ -44,7 +45,7 @@ const lastUpdated = posts[0]?.data.date
       <div class="tile-arrow">&rarr;</div>
     </a>
 
-    {rest.map((post, i) => (
+    {recent.map((post, i) => (
       <a href={`/posts/${post.id}/`} class="tile stagger-in" style={`animation-delay: ${(i + 2) * 50}ms`}>
         <div class="tile-title">{post.data.title.toLowerCase()}</div>
         <div class="tile-meta">{formatDate(post.data.date)}</div>
