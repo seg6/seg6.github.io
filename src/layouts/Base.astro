@@ -7,11 +7,24 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
   hideFooter?: boolean;
 }
 
-const { title, description = 'notes on systems, internals, and the occasional hack.', hideFooter = false } = Astro.props;
+const {
+  title,
+  description = 'notes on systems, internals, and the occasional hack.',
+  image,
+  imageAlt,
+  type = 'website',
+  hideFooter = false,
+} = Astro.props;
 const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
+const siteUrl = Astro.site ?? Astro.url;
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
+const socialImage = image ? new URL(image, siteUrl) : undefined;
 ---
 
 <!doctype html>
@@ -21,6 +34,19 @@ const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{fullTitle}</title>
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content="seg6" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    {socialImage && <meta property="og:image" content={socialImage} />}
+    {socialImage && <meta property="og:image:alt" content={imageAlt ?? title} />}
+    <meta name="twitter:card" content={socialImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {socialImage && <meta name="twitter:image" content={socialImage} />}
+    {socialImage && <meta name="twitter:image:alt" content={imageAlt ?? title} />}
     <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
