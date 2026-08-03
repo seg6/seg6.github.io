@@ -6,6 +6,8 @@ const posts = defineCollection({
   schema: z.object({
     title: z.string(),
     description: z.string(),
+    image: z.string().optional(),
+    imageAlt: z.string().optional(),
     date: z.coerce.date(),
     math: z.boolean().optional().default(false),
     mermaid: z.boolean().optional().default(false),

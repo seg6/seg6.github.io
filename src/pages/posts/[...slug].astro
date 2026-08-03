@@ -12,11 +12,53 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
+
+function firstContentPreview(markdown: string) {
+  const markdownImage = /!\[([^\]]*)\]\(\s*<?([^\s)>]+)>?(?:\s+["'][^"']*["'])?\s*\)/.exec(markdown);
+  const htmlImage = /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/i.exec(markdown);
+  const video = /<video\b[^>]*\bposter=["']([^"']+)["'][^>]*>/i.exec(markdown);
+  const iframe = /<iframe\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/i.exec(markdown);
+
+  let embedPreview;
+  if (iframe) {
+    const youtubeId = /(?:youtube(?:-nocookie)?\.com\/embed\/|youtu\.be\/)([\w-]{11})/i.exec(iframe[1])?.[1];
+    if (youtubeId) {
+      embedPreview = {
+        index: iframe.index,
+        src: `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
+        alt: /\btitle=["']([^"']*)["']/i.exec(iframe[0])?.[1] ?? 'YouTube video',
+      };
+    }
+  }
+
+  const candidates = [
+    markdownImage && { index: markdownImage.index, src: markdownImage[2], alt: markdownImage[1] },
+    htmlImage && {
+      index: htmlImage.index,
+      src: htmlImage[1],
+      alt: /\balt=["']([^"']*)["']/i.exec(htmlImage[0])?.[1],
+    },
+    video && {
+      index: video.index,
+      src: video[1],
+      alt: /\baria-label=["']([^"']*)["']/i.exec(video[0])?.[1],
+    },
+    embedPreview,
+  ].filter((image): image is { index: number; src: string; alt: string | undefined } => Boolean(image));
+
+  return candidates.sort((a, b) => a.index - b.index)[0];
+}
+
+const contentPreview = firstContentPreview(post.body);
+const socialImage = post.data.image ?? contentPreview?.src;
+const socialImageAlt = post.data.imageAlt ?? contentPreview?.alt;
 ---
 
 <Post
   title={post.data.title}
   description={post.data.description}
+  image={socialImage}
+  imageAlt={socialImageAlt}
   date={post.data.date}
   headings={headings}
   toc={post.data.toc}
