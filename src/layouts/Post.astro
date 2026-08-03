@@ -7,6 +7,8 @@ import Comments from '../components/Comments.astro';
 interface Props {
   title: string;
   description: string;
+  image?: string;
+  imageAlt?: string;
   date: Date;
   headings: { depth: number; slug: string; text: string }[];
   toc: boolean;
@@ -14,7 +16,7 @@ interface Props {
   comments?: boolean;
 }
 
-const { title, description, date, headings, toc, mermaid, comments = true } = Astro.props;
+const { title, description, image, imageAlt, date, headings, toc, mermaid, comments = true } = Astro.props;
 
 const formattedDate = date.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -24,7 +26,7 @@ const formattedDate = date.toLocaleDateString('en-US', {
 
 ---
 
-<Base title={title} description={description}>
+<Base title={title} description={description} image={image} imageAlt={imageAlt} type="article">
   <div class="post-back">
     <a href="/posts">&larr; back to index</a>
   </div>
