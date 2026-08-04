@@ -1,18 +1,25 @@
 ---
 interface Props {
+  title: string;
   headings: { depth: number; slug: string; text: string }[];
 }
-const { headings } = Astro.props;
-const filtered = headings.filter(h => h.depth <= 3);
+const { title, headings } = Astro.props;
+const filtered = [
+  { depth: 1, slug: 'post-title', text: title, isPostTitle: true },
+  ...headings.filter(h => h.depth <= 3).map(h => ({ ...h, isPostTitle: false })),
+];
 ---
 
 {filtered.length > 0 && (
-  <aside class="toc-sidebar">
+  <aside class="toc-sidebar" aria-label="Table of contents">
     <div class="toc-title">on this page</div>
     <ul class="toc-list">
       {filtered.map(h => (
-        <li>
-          <a href={`#${h.slug}`} class={`toc-h${h.depth}`}>
+        <li class:list={{ 'toc-post-item': h.isPostTitle }}>
+          <a
+            href={`#${h.slug}`}
+            class:list={[`toc-h${h.depth}`, { 'toc-post-title': h.isPostTitle }]}
+          >
             {h.text.toLowerCase()}
           </a>
         </li>
@@ -23,7 +30,11 @@ const filtered = headings.filter(h => h.depth <= 3);
 
 <script>
   function initScrollspy() {
-    const links = document.querySelectorAll('.toc-list a');
+    const toc = document.querySelector<HTMLElement>('.toc-sidebar');
+    if (!toc || toc.dataset.ready === '1') return;
+    toc.dataset.ready = '1';
+
+    const links = toc.querySelectorAll('.toc-list a');
     if (!links.length) return;
 
     const headingIds = Array.from(links).map(a => {
@@ -36,7 +47,7 @@ const filtered = headings.filter(h => h.depth <= 3);
         for (const entry of entries) {
           if (entry.isIntersecting) {
             links.forEach(l => l.classList.remove('active'));
-            const active = document.querySelector(`.toc-list a[href="#${entry.target.id}"]`);
+            const active = toc.querySelector(`.toc-list a[href="#${entry.target.id}"]`);
             if (active) active.classList.add('active');
           }
         }
@@ -50,5 +61,6 @@ const filtered = headings.filter(h => h.depth <= 3);
     }
   }
 
+  initScrollspy();
   document.addEventListener('astro:page-load', initScrollspy);
 </script>
