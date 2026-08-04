@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 
 const projects = [
+  { name: 'surf', desc: 'remote chromium browser for legacy ios devices', tags: ['objective-c', 'ios'], url: 'https://github.com/seg6/surf' },
   { name: 'byte', desc: '6502 based fantasy console', tags: ['rust', 'emulator'], url: 'https://github.com/seg6/byte' },
   { name: 'mmproxy-rs', desc: 'rust implementation of tcp + udp proxy protocol', tags: ['rust', 'networking'], url: 'https://github.com/saiko-tech/mmproxy-rs' },
   { name: 'async-fred-session', desc: 'redis backed session store for async-session using fred.rs', tags: ['rust', 'async'], url: 'https://github.com/seg6/async-fred-session' },
@@ -13,22 +14,23 @@ const projects = [
 ---
 
 <Base title="projects" description="the registry — project showcase">
-  <div class="log-header">
-    <h1>projects</h1>
-    <span class="count">{projects.length} entries</span>
-  </div>
+  <main class="index-page">
+    <header class="log-header">
+      <h1>projects</h1>
+      <p>small tools, experiments, and the rest.</p>
+      <span class="count">{projects.length} repositories</span>
+    </header>
 
-  <div class="registry-grid">
-    {projects.map((project, i) => (
-      <a href={project.url} target="_blank" rel="noopener" class="registry-card stagger-in" style={`animation-delay: ${i * 60}ms`}>
-        <span class="card-name">{project.name}</span>
-        <div class="card-divider"></div>
-        <span class="card-desc">{project.desc}</span>
-        <div class="card-footer">
-          <span class="card-tags">{project.tags.join(' // ')}</span>
-          <span class="card-link">gh &rarr;</span>
-        </div>
-      </a>
-    ))}
-  </div>
+    <div class="registry-grid">
+      {projects.map((project, i) => (
+        <a href={project.url} target="_blank" rel="noopener" class="registry-card stagger-in" style={`animation-delay: ${i * 45}ms`}>
+          <div class="card-copy">
+            <h2 class="card-name">{project.name}</h2>
+            <p class="card-desc">{project.desc}</p>
+          </div>
+          <span class="card-tags">{project.tags.join(' · ')}</span>
+        </a>
+      ))}
+    </div>
+  </main>
 </Base>

@@ -1,7 +1,10 @@
 ---
-import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import '@fontsource/stix-two-text/latin-400.css';
+import '@fontsource/stix-two-text/latin-400-italic.css';
+import '@fontsource/stix-two-text/latin-500.css';
+import '@fontsource/stix-two-text/latin-600.css';
 import '../styles/global.css';
 
 interface Props {
@@ -11,6 +14,8 @@ interface Props {
   imageAlt?: string;
   type?: 'website' | 'article';
   hideFooter?: boolean;
+  viewportAxis?: boolean;
+  wideContent?: boolean;
 }
 
 const {
@@ -20,6 +25,8 @@ const {
   imageAlt,
   type = 'website',
   hideFooter = false,
+  viewportAxis = false,
+  wideContent = false,
 } = Astro.props;
 const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
 const siteUrl = Astro.site ?? Astro.url;
@@ -31,7 +38,7 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
     <title>{fullTitle}</title>
     <link rel="canonical" href={canonicalUrl} />
@@ -52,41 +59,68 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
-    <ClientRouter />
     <script is:inline>
-      (function() {
-        var t = localStorage.getItem('theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', t);
-      })();
-      document.addEventListener('astro:before-swap', function(e) {
-        var t = localStorage.getItem('theme') || 'dark';
-        e.newDocument.documentElement.setAttribute('data-theme', t);
-      });
+      try {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          document.documentElement.dataset.theme = savedTheme;
+        }
+      } catch {}
     </script>
   </head>
   <body>
+    {viewportAxis && <div class="viewport-axis" aria-hidden="true"><span>webview center</span></div>}
     <div class="site">
+      <div class="paper-stage" aria-hidden="true">
+        <div class="paper-mask">
+          <span class="paper-mask-top"></span>
+          <span class="paper-mask-right"></span>
+          <span class="paper-mask-bottom"></span>
+          <span class="paper-mask-left"></span>
+        </div>
+        <div class="paper-aperture"></div>
+      </div>
       <Header />
-      <slot />
+      <div class:list={['content-frame', { 'content-frame-wide': wideContent }]}>
+        <slot />
+      </div>
       {!hideFooter && <Footer />}
     </div>
     <script defer src="https://static.seg6.space/a/s.js" is:inline></script>
     <script>
-      function initThemeToggle() {
-        const btn = document.querySelector('.theme-toggle');
-        if (!btn) return;
-        const theme = document.documentElement.getAttribute('data-theme') || 'dark';
-        btn.textContent = theme === 'dark' ? 'light' : 'dark';
-        btn.addEventListener('click', () => {
-          const current = document.documentElement.getAttribute('data-theme');
-          const next = current === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', next);
-          localStorage.setItem('theme', next);
-          btn.textContent = next === 'dark' ? 'light' : 'dark';
-          document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme: next } }));
-        });
+      const themeToggle = document.querySelector<HTMLButtonElement>('.theme-toggle');
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+      function resolvedTheme() {
+        const selected = document.documentElement.dataset.theme;
+        if (selected === 'light' || selected === 'dark') return selected;
+        return systemTheme.matches ? 'dark' : 'light';
       }
-      document.addEventListener('astro:page-load', initThemeToggle);
+
+      function updateThemeToggle() {
+        if (!themeToggle) return;
+        const nextTheme = resolvedTheme() === 'dark' ? 'light' : 'dark';
+        themeToggle.textContent = nextTheme;
+        themeToggle.setAttribute('aria-label', `switch to ${nextTheme} theme`);
+      }
+
+      themeToggle?.addEventListener('click', () => {
+        const nextTheme = resolvedTheme() === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = nextTheme;
+        try {
+          localStorage.setItem('theme', nextTheme);
+        } catch {}
+        updateThemeToggle();
+        document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme: nextTheme } }));
+      });
+
+      systemTheme.addEventListener('change', () => {
+        if (document.documentElement.dataset.theme) return;
+        updateThemeToggle();
+        document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme: resolvedTheme() } }));
+      });
+
+      updateThemeToggle();
     </script>
   </body>
 </html>

@@ -1,8 +1,7 @@
 ---
 import Base from './Base.astro';
-import TOC from '../components/TOC.astro';
-import ReadingProgress from '../components/ReadingProgress.astro';
 import Comments from '../components/Comments.astro';
+import TOC from '../components/TOC.astro';
 
 interface Props {
   title: string;
@@ -14,9 +13,20 @@ interface Props {
   toc: boolean;
   mermaid?: boolean;
   comments?: boolean;
+  viewportAxis?: boolean;
 }
 
-const { title, description, image, imageAlt, date, headings, toc, mermaid, comments = true } = Astro.props;
+const {
+  title,
+  description,
+  image,
+  imageAlt,
+  date,
+  headings,
+  toc,
+  comments = true,
+  viewportAxis = false,
+} = Astro.props;
 
 const formattedDate = date.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -26,43 +36,35 @@ const formattedDate = date.toLocaleDateString('en-US', {
 
 ---
 
-<Base title={title} description={description} image={image} imageAlt={imageAlt} type="article">
-  <div class="post-back">
-    <a href="/posts">&larr; back to index</a>
-  </div>
+<Base
+  title={title}
+  description={description}
+  image={image}
+  imageAlt={imageAlt}
+  type="article"
+  viewportAxis={viewportAxis}
+  wideContent
+>
+  <main class="post-page">
+    <header class="post-header">
+      <time datetime={date.toISOString()}>{formattedDate}</time>
+      <h1 id="post-title">{title}</h1>
+      <p>{description}</p>
+    </header>
 
-  <div class="dossier-header">
-    <div class="dossier-field subject">
-      <span class="dossier-label">subject</span>
-      <span class="dossier-value">{title}</span>
+    <div class="post-body-grid">
+      <article class="post-prose">
+        <slot />
+      </article>
+      {toc && <TOC title={title} headings={headings} />}
     </div>
-    <div class="dossier-field">
-      <span class="dossier-label">date</span>
-      <span class="dossier-value">{formattedDate}</span>
+
+    <div class="post-content-wrapper comments-wrapper">
+      <div class="post-comments-wrapper">
+        <Comments enabled={comments} />
+      </div>
     </div>
-    <div class="dossier-field">
-      <span class="dossier-label">re</span>
-      <span class="dossier-value">{description}</span>
-    </div>
-    <hr class="dossier-divider" />
-  </div>
-
-  <div class="post-content-wrapper">
-    {toc && <TOC headings={headings} />}
-    <article class="post-prose">
-      <slot />
-    </article>
-  </div>
-
-  <div class="post-content-wrapper">
-    <div class="post-comments-wrapper">
-      <Comments enabled={comments} />
-    </div>
-  </div>
-
-  <ReadingProgress />
-
-</Base>
+  </main>
 
 <script>
   async function initMermaid() {
@@ -109,32 +111,7 @@ const formattedDate = date.toLocaleDateString('en-US', {
     });
   }
 
-  function getGiscusTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    return isDark ? 'dark_dimmed' : 'light';
-  }
-
-  function syncGiscusTheme() {
-    const frame = document.querySelector('iframe.giscus-frame');
-    if (!frame) return false;
-    frame.contentWindow?.postMessage(
-      { giscus: { setConfig: { theme: getGiscusTheme() } } },
-      'https://giscus.app'
-    );
-    return true;
-  }
-
-  function ensureGiscusThemeSync(attempt = 0) {
-    if (syncGiscusTheme()) return;
-    if (attempt >= 25) return;
-    setTimeout(() => ensureGiscusThemeSync(attempt + 1), 200);
-  }
-
-  document.addEventListener('astro:page-load', () => {
-    initCodeBlocks();
-    initMermaid();
-    ensureGiscusThemeSync();
-  });
-
-  document.addEventListener('theme:changed', ensureGiscusThemeSync);
+  initCodeBlocks();
+  initMermaid();
 </script>
+</Base>

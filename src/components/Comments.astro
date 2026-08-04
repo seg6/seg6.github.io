@@ -9,9 +9,8 @@ const { enabled = true } = Astro.props;
 {enabled && (
   <section class="comments-shell" aria-label="post comments">
     <div class="comments-headline">
-      <span class="dossier-label">thread</span>
       <div class="comments-headline-main">
-        <span class="comments-title">discussion</span>
+        <span class="comments-title">Discussion</span>
         <button class="comments-toggle" type="button" aria-expanded="false">
           open thread
         </button>
@@ -26,11 +25,6 @@ const { enabled = true } = Astro.props;
 
 <script>
   const COMMENTS_EXPANDED_STATE_KEY = 'comments:expanded';
-
-  function getInitialGiscusTheme() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    return isDark ? 'dark_dimmed' : 'light';
-  }
 
   function readExpandedState() {
     try {
@@ -60,7 +54,11 @@ const { enabled = true } = Astro.props;
     script.setAttribute('data-reactions-enabled', '0');
     script.setAttribute('data-emit-metadata', '1');
     script.setAttribute('data-input-position', 'bottom');
-    script.setAttribute('data-theme', getInitialGiscusTheme());
+    const selectedTheme = document.documentElement.dataset.theme;
+    const theme = selectedTheme === 'light' || selectedTheme === 'dark'
+      ? selectedTheme
+      : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    script.setAttribute('data-theme', theme);
     script.setAttribute('data-lang', 'en');
     script.setAttribute('data-loading', 'lazy');
     script.setAttribute('crossorigin', 'anonymous');
@@ -106,5 +104,13 @@ const { enabled = true } = Astro.props;
     });
   }
 
-  document.addEventListener('astro:page-load', initCommentsToggle);
+  initCommentsToggle();
+
+  document.addEventListener('theme:changed', (event) => {
+    const frame = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (!frame) return;
+    const theme = event instanceof CustomEvent ? event.detail?.theme : undefined;
+    if (theme !== 'light' && theme !== 'dark') return;
+    frame.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
+  });
 </script>

@@ -13,6 +13,7 @@ const posts = defineCollection({
     mermaid: z.boolean().optional().default(false),
     toc: z.boolean().optional().default(true),
     comments: z.boolean().optional().default(true),
+    viewportAxis: z.boolean().optional().default(false),
   }),
 });
 
