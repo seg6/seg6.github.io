@@ -12,18 +12,20 @@ function formatDate(date: Date) {
 ---
 
 <Base title="posts" description="all posts">
-  <div class="log-header">
-    <h1>posts</h1>
-    <span class="count">{posts.length} entries</span>
-  </div>
+  <main class="index-page">
+    <header class="log-header">
+      <h1>writing</h1>
+      <p>notes on projects, problems, and rabbit holes I fell into while trying to make things work.</p>
+      <span class="count">{posts.length} entries</span>
+    </header>
 
-  <div class="log-list">
-    {posts.map(post => (
-      <a href={`/posts/${post.id}/`} class="log-entry">
-        <span class="log-date">{formatDate(post.data.date)}</span>
-        <span class="log-title">{post.data.title.toLowerCase()}</span>
-        <span class="log-arrow">&rarr;</span>
-      </a>
-    ))}
-  </div>
+    <div class="log-list">
+      {posts.map(post => (
+        <a href={`/posts/${post.id}/`} class="log-entry">
+          <time class="log-date" datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+          <span class="log-title">{post.data.title}</span>
+        </a>
+      ))}
+    </div>
+  </main>
 </Base>

@@ -6,8 +6,7 @@ const posts = (await getCollection('posts')).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime()
 );
 
-const [featured, ...rest] = posts;
-const recent = rest.slice(0, 5);
+const recent = posts.slice(0, 6);
 
 function formatDate(date: Date) {
   return date.toLocaleDateString('en-US', {
@@ -21,41 +20,35 @@ const lastUpdated = posts[0]?.data.date
   : '';
 ---
 
-<Base title="seg6" hideFooter>
-  <div class="bento">
-    <div class="bento-bio stagger-in">
-      <img src="/img/elma.webp" alt="seg6" class="bio-avatar" />
-      <div class="bio-name">seg6</div>
-      <div class="bio-tagline">speaks fluent segfault</div>
-      <div class="bio-description">
-        software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.
+<Base title="seg6">
+  <main class="home-page">
+    <section class="home-intro stagger-in" aria-labelledby="home-title">
+      <img
+        class="home-elma"
+        src="/img/elma.webp"
+        alt="elma, a grey cat lying in the sun"
+        width="400"
+        height="400"
+      />
+      <div class="home-copy">
+        <p>software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.</p>
       </div>
-      <div class="bio-links">
-        <span class="bio-email">hi@seg6.space</span>
-        <span class="bio-links-sep">//</span>
-        <a href="https://github.com/seg6">github</a>
-        <span class="bio-links-sep">//</span>
-        <a href="https://linkedin.com/in/omer-faruk">linkedin</a>
+    </section>
+
+    <section class="home-writing" aria-labelledby="latest-writing">
+      <div class="section-heading">
+        <h2 id="latest-writing">writing</h2>
+        <a href="/posts/">archive ({posts.length})</a>
       </div>
-    </div>
-
-    <a href={`/posts/${featured.id}/`} class="tile tile-featured stagger-in" style="animation-delay: 50ms">
-      <div class="tile-title">{featured.data.title.toLowerCase()}</div>
-      <div class="tile-meta">{formatDate(featured.data.date)} // {featured.data.description.toLowerCase()}</div>
-      <div class="tile-arrow">&rarr;</div>
-    </a>
-
-    {recent.map((post, i) => (
-      <a href={`/posts/${post.id}/`} class="tile stagger-in" style={`animation-delay: ${(i + 2) * 50}ms`}>
-        <div class="tile-title">{post.data.title.toLowerCase()}</div>
-        <div class="tile-meta">{formatDate(post.data.date)}</div>
-        <div class="tile-description">{post.data.description.toLowerCase()}</div>
-        <div class="tile-arrow">&rarr;</div>
-      </a>
-    ))}
-  </div>
-
-  <div class="status-bar">
-    {posts.length} entries // last updated {lastUpdated}
-  </div>
+      <div class="home-posts">
+        {recent.map((post, i) => (
+          <a href={`/posts/${post.id}/`} class="tile stagger-in" style={`animation-delay: ${(i + 1) * 45}ms`}>
+            <time class="tile-meta" datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+            <h3 class="tile-title">{post.data.title}</h3>
+          </a>
+        ))}
+      </div>
+      <p class="status-bar">Last updated {lastUpdated}</p>
+    </section>
+  </main>
 </Base>
