@@ -5,6 +5,7 @@ import '@fontsource/stix-two-text/latin-400.css';
 import '@fontsource/stix-two-text/latin-400-italic.css';
 import '@fontsource/stix-two-text/latin-500.css';
 import '@fontsource/stix-two-text/latin-600.css';
+import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 
 interface Props {
@@ -58,7 +59,6 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
     <script is:inline>
       try {
         var savedTheme = localStorage.getItem('theme');
