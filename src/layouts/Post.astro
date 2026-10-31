@@ -63,6 +63,33 @@ const {
   </main>
 
 <script>
+  function initVideoDemos() {
+    document.querySelectorAll<HTMLElement>('[data-video-demo]').forEach(demo => {
+      const video = demo.querySelector('video');
+      const play = demo.querySelector<HTMLButtonElement>('[data-video-play]');
+
+      if (!video || !play) return;
+
+      const showControls = () => {
+        video.controls = true;
+        play.hidden = true;
+      };
+
+      play.addEventListener('click', () => {
+        showControls();
+        video.focus();
+        void video.play().catch(() => {
+          // Keep native controls available if playback is refused.
+          video.focus();
+        });
+      });
+
+      video.addEventListener('play', showControls, { once: true });
+      video.controls = false;
+      play.hidden = false;
+    });
+  }
+
   async function initMermaid() {
     const nodes = document.querySelectorAll('pre.mermaid');
     if (nodes.length === 0) return;
@@ -115,6 +142,7 @@ const {
     });
   }
 
+  initVideoDemos();
   initCodeBlocks();
   initMermaid();
 </script>
