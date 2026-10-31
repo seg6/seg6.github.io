@@ -1,33 +1,26 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import '@fontsource/stix-two-text/latin-400.css';
-import '@fontsource/stix-two-text/latin-400-italic.css';
-import '@fontsource/stix-two-text/latin-500.css';
-import '@fontsource/stix-two-text/latin-600.css';
+import { Font } from 'astro:assets';
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 
 interface Props {
   title: string;
+  class?: string;
   description?: string;
   image?: string;
   imageAlt?: string;
   type?: 'website' | 'article';
-  hideFooter?: boolean;
-  viewportAxis?: boolean;
-  wideContent?: boolean;
 }
 
 const {
   title,
+  class: pageClass,
   description = 'notes on systems, internals, and the occasional hack.',
   image,
   imageAlt,
   type = 'website',
-  hideFooter = false,
-  viewportAxis = false,
-  wideContent = false,
 } = Astro.props;
 const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
 const siteUrl = Astro.site ?? Astro.url;
@@ -36,13 +29,17 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class={pageClass}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <Font cssVariable="--font-sans" preload />
+    <Font cssVariable="--font-mono" preload />
+    <Font cssVariable="--font-serif" preload={type === 'article' ? [{ weight: 400, style: 'normal' }] : false} />
     <meta name="description" content={description} />
     <title>{fullTitle}</title>
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" type="application/rss+xml" title="seg6 — writing" href="/posts/rss.xml" />
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content="seg6" />
     <meta property="og:title" content={title} />
@@ -68,23 +65,14 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
       } catch {}
     </script>
   </head>
-  <body>
-    {viewportAxis && <div class="viewport-axis" aria-hidden="true"><span>webview center</span></div>}
+  <body id="top">
+    <a class="skip-link" href="#main-content">skip to content</a>
     <div class="site">
-      <div class="paper-stage" aria-hidden="true">
-        <div class="paper-mask">
-          <span class="paper-mask-top"></span>
-          <span class="paper-mask-right"></span>
-          <span class="paper-mask-bottom"></span>
-          <span class="paper-mask-left"></span>
-        </div>
-        <div class="paper-aperture"></div>
-      </div>
       <Header />
-      <div class:list={['content-frame', { 'content-frame-wide': wideContent }]}>
+      <div class="content-frame">
         <slot />
       </div>
-      {!hideFooter && <Footer />}
+      <Footer />
     </div>
     <script defer src="https://static.seg6.space/a/s.js" is:inline></script>
     <script>
@@ -100,7 +88,7 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
       function updateThemeToggle() {
         if (!themeToggle) return;
         const nextTheme = resolvedTheme() === 'dark' ? 'light' : 'dark';
-        themeToggle.textContent = nextTheme;
+        themeToggle.setAttribute('aria-pressed', String(resolvedTheme() === 'dark'));
         themeToggle.setAttribute('aria-label', `switch to ${nextTheme} theme`);
       }
 

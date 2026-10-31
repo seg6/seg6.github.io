@@ -1,20 +1,23 @@
-<div class="reading-progress" id="reading-progress"></div>
+<div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
 
 <script>
   function initProgress() {
     const bar = document.getElementById('reading-progress');
-    if (!bar) return;
+    const prose = document.querySelector<HTMLElement>('.post-prose');
+    if (!bar || !prose) return;
 
     function update() {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      bar.style.width = `${Math.min(progress, 100)}%`;
+      const start = window.scrollY + prose.getBoundingClientRect().top;
+      const length = prose.offsetHeight - window.innerHeight;
+      const progress = length > 0 ? ((window.scrollY - start) / length) * 100 : 100;
+      bar.style.width = `${Math.max(0, Math.min(progress, 100))}%`;
     }
 
     window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    window.addEventListener('load', update, { once: true });
     update();
   }
 
-  document.addEventListener('astro:page-load', initProgress);
+  initProgress();
 </script>

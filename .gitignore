@@ -2,3 +2,4 @@ dist/
 node_modules/
 .astro/
 .playwright-cli/
+.DS_Store

@@ -1,30 +1,28 @@
 ---
 interface Props {
-  title: string;
   headings: { depth: number; slug: string; text: string }[];
 }
-const { title, headings } = Astro.props;
-const filtered = [
-  { depth: 1, slug: 'post-title', text: title, isPostTitle: true },
-  ...headings.filter(h => h.depth <= 3).map(h => ({ ...h, isPostTitle: false })),
-];
+const { headings } = Astro.props;
+const filtered = headings.filter(h => h.depth <= 3);
 ---
 
 {filtered.length > 0 && (
-  <aside class="toc-sidebar" aria-label="Table of contents">
-    <div class="toc-title">on this page</div>
+  <aside class="toc-sidebar" aria-label="table of contents">
+    <details class="toc-details">
+    <summary class="toc-title">on this page</summary>
     <ul class="toc-list">
       {filtered.map(h => (
-        <li class:list={{ 'toc-post-item': h.isPostTitle }}>
+        <li>
           <a
             href={`#${h.slug}`}
-            class:list={[`toc-h${h.depth}`, { 'toc-post-title': h.isPostTitle }]}
+            class={`toc-h${h.depth}`}
           >
-            {h.text.toLowerCase()}
+            {h.text}
           </a>
         </li>
       ))}
     </ul>
+    </details>
   </aside>
 )}
 
@@ -33,6 +31,13 @@ const filtered = [
     const toc = document.querySelector<HTMLElement>('.toc-sidebar');
     if (!toc || toc.dataset.ready === '1') return;
     toc.dataset.ready = '1';
+    const disclosure = toc.querySelector<HTMLDetailsElement>('details');
+    const desktop = window.matchMedia('(min-width: 80rem)');
+    if (disclosure) {
+      const updateDisclosure = () => { disclosure.open = desktop.matches; };
+      updateDisclosure();
+      desktop.addEventListener('change', updateDisclosure);
+    }
 
     const links = toc.querySelectorAll('.toc-list a');
     if (!links.length) return;
