@@ -2,6 +2,8 @@
 import Base from './Base.astro';
 import Comments from '../components/Comments.astro';
 import TOC from '../components/TOC.astro';
+import ReadingProgress from '../components/ReadingProgress.astro';
+import { formatDate } from '../lib/posts';
 
 interface Props {
   title: string;
@@ -13,7 +15,7 @@ interface Props {
   toc: boolean;
   mermaid?: boolean;
   comments?: boolean;
-  viewportAxis?: boolean;
+  readingMinutes: number;
 }
 
 const {
@@ -25,14 +27,8 @@ const {
   headings,
   toc,
   comments = true,
-  viewportAxis = false,
+  readingMinutes,
 } = Astro.props;
-
-const formattedDate = date.toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-}).toLowerCase();
 
 ---
 
@@ -42,21 +38,21 @@ const formattedDate = date.toLocaleDateString('en-US', {
   image={image}
   imageAlt={imageAlt}
   type="article"
-  viewportAxis={viewportAxis}
-  wideContent
 >
-  <main class="post-page">
+  <ReadingProgress />
+  <main id="main-content" class="post-page">
     <header class="post-header">
-      <time datetime={date.toISOString()}>{formattedDate}</time>
+      <a class="post-back" href="/posts/">back to all writing</a>
+      <div class="post-meta"><time datetime={date.toISOString()}>{formatDate(date)}</time><span>{readingMinutes} min read</span></div>
       <h1 id="post-title">{title}</h1>
       <p>{description}</p>
     </header>
 
     <div class="post-body-grid">
-      <article class="post-prose">
+      <article class="post-prose" aria-labelledby="post-title">
         <slot />
       </article>
-      {toc && <TOC title={title} headings={headings} />}
+      {toc && <TOC headings={headings} />}
     </div>
 
     <div class="post-content-wrapper comments-wrapper">
@@ -71,7 +67,9 @@ const formattedDate = date.toLocaleDateString('en-US', {
     const nodes = document.querySelectorAll('pre.mermaid');
     if (nodes.length === 0) return;
     const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
-    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+    const selected = document.documentElement.dataset.theme;
+    const dark = selected ? selected === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'neutral' });
     nodes.forEach(node => node.removeAttribute('data-processed'));
     await mermaid.run({ nodes });
   }
@@ -85,7 +83,7 @@ const formattedDate = date.toLocaleDateString('en-US', {
       wrapper.className = 'code-block-wrapper';
 
       const code = pre.querySelector('code');
-      const lang = code?.className?.match(/language-(\w+)/)?.[1];
+      const lang = (pre as HTMLElement).dataset.language || code?.className?.match(/language-(\w+)/)?.[1];
 
       if (lang) {
         const label = document.createElement('span');
@@ -95,12 +93,18 @@ const formattedDate = date.toLocaleDateString('en-US', {
       }
 
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.className = 'copy-btn';
       btn.textContent = 'copy';
+      btn.setAttribute('aria-label', 'copy code');
+      btn.setAttribute('aria-live', 'polite');
       btn.addEventListener('click', () => {
         const text = code?.textContent || pre.textContent || '';
         navigator.clipboard.writeText(text).then(() => {
           btn.textContent = 'copied';
+          setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+        }).catch(() => {
+          btn.textContent = 'could not copy';
           setTimeout(() => { btn.textContent = 'copy'; }, 1500);
         });
       });

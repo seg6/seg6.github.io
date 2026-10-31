@@ -1,54 +1,35 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
+import { formatDate } from '../lib/posts';
 
 const posts = (await getCollection('posts')).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime()
 );
-
 const recent = posts.slice(0, 6);
-
-function formatDate(date: Date) {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-  }).toLowerCase();
-}
-
-const lastUpdated = posts[0]?.data.date
-  ? formatDate(posts[0].data.date)
-  : '';
 ---
 
-<Base title="seg6">
-  <main class="home-page">
-    <section class="home-intro stagger-in" aria-labelledby="home-title">
-      <img
-        class="home-elma"
-        src="/img/elma.webp"
-        alt="elma, a grey cat lying in the sun"
-        width="400"
-        height="400"
-      />
-      <div class="home-copy">
-        <p>software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.</p>
-      </div>
+<Base title="seg6" class="home-layout">
+  <main id="main-content" class="home-page">
+    <section class="home-intro" aria-labelledby="home-title">
+      <h1 id="home-title" class="sr-only">seg6</h1>
+      <p>software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.</p>
+      <img src="/img/elma.webp" alt="Elma, a grey cat lying in the sun" width="400" height="400" />
     </section>
 
     <section class="home-writing" aria-labelledby="latest-writing">
       <div class="section-heading">
         <h2 id="latest-writing">writing</h2>
-        <a href="/posts/">archive ({posts.length})</a>
+        <a href="/posts/">all posts ({posts.length})</a>
       </div>
       <div class="home-posts">
-        {recent.map((post, i) => (
-          <a href={`/posts/${post.id}/`} class="tile stagger-in" style={`animation-delay: ${(i + 1) * 45}ms`}>
-            <time class="tile-meta" datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
-            <h3 class="tile-title">{post.data.title}</h3>
+        {recent.map(post => (
+          <a class="home-post" href={`/posts/${post.id}/`}>
+            <h3>{post.data.title}</h3>
+            <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
           </a>
         ))}
       </div>
-      <p class="status-bar">Last updated {lastUpdated}</p>
     </section>
   </main>
 </Base>

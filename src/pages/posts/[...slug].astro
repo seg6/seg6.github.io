@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Post from '../../layouts/Post.astro';
+import { readingMinutes } from '../../lib/posts';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -60,11 +61,11 @@ const socialImageAlt = post.data.imageAlt ?? contentPreview?.alt;
   image={socialImage}
   imageAlt={socialImageAlt}
   date={post.data.date}
+  readingMinutes={readingMinutes(post.body)}
   headings={headings}
   toc={post.data.toc}
   mermaid={post.data.mermaid}
   comments={post.data.comments}
-  viewportAxis={post.data.viewportAxis}
 >
   <Content />
 </Post>

@@ -13,22 +13,21 @@ const projects = [
 ];
 ---
 
-<Base title="projects" description="the registry — project showcase">
-  <main class="index-page">
-    <header class="log-header">
+<Base title="projects" description="small tools, experiments, and things I've put together.">
+  <main id="main-content" class="index-page projects-page">
+    <header class="page-intro">
       <h1>projects</h1>
       <p>small tools, experiments, and the rest.</p>
-      <span class="count">{projects.length} repositories</span>
     </header>
 
     <div class="registry-grid">
-      {projects.map((project, i) => (
-        <a href={project.url} target="_blank" rel="noopener" class="registry-card stagger-in" style={`animation-delay: ${i * 45}ms`}>
+      {projects.map(project => (
+        <a href={project.url} target="_blank" rel="noopener noreferrer" class="registry-card">
           <div class="card-copy">
             <h2 class="card-name">{project.name}</h2>
             <p class="card-desc">{project.desc}</p>
           </div>
-          <span class="card-tags">{project.tags.join(' · ')}</span>
+          <span class="card-tags">{project.tags.join(' / ')}</span>
         </a>
       ))}
     </div>

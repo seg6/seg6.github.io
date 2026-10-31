@@ -1,31 +1,65 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
+import { formatDate } from '../../lib/posts';
 
-const posts = (await getCollection('posts')).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
-
-function formatDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
+const posts = (await getCollection('posts')).sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const years = [...new Set(posts.map(post => post.data.date.getUTCFullYear()))];
 ---
 
-<Base title="posts" description="all posts">
-  <main class="index-page">
-    <header class="log-header">
+<Base title="writing" description="notes on projects, problems, and rabbit holes I fell into while trying to make things work.">
+  <main id="main-content" class="index-page archive-page">
+    <header class="page-intro">
       <h1>writing</h1>
-      <p>notes on projects, problems, and rabbit holes I fell into while trying to make things work.</p>
-      <span class="count">{posts.length} entries</span>
     </header>
-
-    <div class="log-list">
-      {posts.map(post => (
-        <a href={`/posts/${post.id}/`} class="log-entry">
-          <time class="log-date" datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
-          <span class="log-title">{post.data.title}</span>
-        </a>
-      ))}
+    <div class="archive-toolbar">
+      <label class="search-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></svg>
+        <span class="sr-only">search writing</span>
+        <input type="search" id="post-search" placeholder="search posts…" autocomplete="off" />
+      </label>
+      <span class="archive-count" aria-live="polite" aria-atomic="true">{posts.length} entries</span>
     </div>
+    <div class="archive-years">
+      {years.map(year => <section class="archive-year" aria-labelledby={`year-${year}`}>
+        <h2 id={`year-${year}`}>{year}</h2>
+        <div class="archive-entries">
+          {posts.filter(post => post.data.date.getUTCFullYear() === year).map(post => <a href={`/posts/${post.id}/`} class="archive-entry" data-search={`${post.data.title} ${post.data.description}`.toLowerCase()}>
+            <div class="archive-entry-copy"><h3>{post.data.title}</h3><p>{post.data.description}</p></div>
+            <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+          </a>)}
+        </div>
+      </section>)}
+    </div>
+    <div class="search-empty" hidden><p>no posts found.</p><span>try a different word, or <button type="button" id="clear-search">clear your search</button>.</span></div>
   </main>
 </Base>
+
+<script>
+  const search = document.querySelector<HTMLInputElement>('#post-search');
+  const entries = [...document.querySelectorAll<HTMLElement>('.archive-entry')];
+  const groups = [...document.querySelectorAll<HTMLElement>('.archive-year')];
+  const count = document.querySelector('.archive-count');
+  const empty = document.querySelector<HTMLElement>('.search-empty');
+
+  function filterPosts() {
+    const query = search?.value.trim().toLowerCase() || '';
+    let visible = 0;
+    entries.forEach(entry => {
+      const matches = query.split(/\s+/).every(word => entry.dataset.search?.includes(word));
+      entry.hidden = !matches;
+      if (matches) visible++;
+    });
+    groups.forEach(group => { group.hidden = !group.querySelector('.archive-entry:not([hidden])'); });
+    if (count) count.textContent = `${visible} ${visible === 1 ? 'entry' : 'entries'}`;
+    if (empty) empty.hidden = visible > 0;
+  }
+  search?.addEventListener('input', filterPosts);
+  document.querySelector('#clear-search')?.addEventListener('click', () => {
+    if (!search) return;
+    search.value = '';
+    filterPosts();
+    search.focus();
+  });
+  filterPosts();
+</script>

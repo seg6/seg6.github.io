@@ -1,6 +1,9 @@
 <footer class="site-footer">
-  <a href="mailto:hi@seg6.space">email</a>
-  <a href="https://github.com/seg6">github</a>
-  <a href="https://x.com/_seg6">x</a>
-  <a href="/posts/rss.xml">rss</a>
+  <nav class="footer-links" aria-label="elsewhere">
+    <a href="mailto:hi@seg6.space">email</a>
+    <a href="https://github.com/seg6">github</a>
+    <a href="https://x.com/_seg6">x</a>
+    <a href="/posts/rss.xml">rss</a>
+  </nav>
+  {Astro.url.pathname !== '/' && <a href="#top" class="back-to-top">back to top</a>}
 </footer>
