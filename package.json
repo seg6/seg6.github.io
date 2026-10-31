@@ -16,8 +16,12 @@
     "@astrojs/rss": "^4.0.17",
     "@fontsource/stix-two-text": "^5.3.0",
     "astro": "^7.1.1",
-    "rehype-katex": "^1.2.0",
-    "remark-math": "^3.0.1"
+    "katex": "^0.19.1",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0"
+  },
+  "overrides": {
+    "katex": "$katex"
   },
   "allowScripts": {
     "sharp@0.34.5": true,
