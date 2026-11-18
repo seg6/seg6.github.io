@@ -1,0 +1,45 @@
+@import url("https://giscus.app/themes/noborder_light.css");
+
+main {
+  --seg-rule: #dad8cf;
+  --primary-default: 42, 63, 208;
+  --bg-default: 230, 228, 220;
+  --color-btn-text: #1a1a18;
+  --color-btn-primary-text: #efeee9;
+  --color-fg-default: #1a1a18;
+  --color-fg-muted: #6f6e67;
+  --color-fg-subtle: #b5b3aa;
+  --color-canvas-default: #efeee9;
+  --color-canvas-overlay: #efeee9;
+  --color-border-default: #dad8cf;
+  --color-border-muted: #dad8cf;
+  --color-neutral-muted: #dad8cf;
+  --color-segmented-control-bg: #e6e4dc;
+  --color-segmented-control-button-bg: #efeee9;
+  --color-scale-gray-1: #e6e4dc;
+  --color-scale-blue-1: rgba(42, 63, 208, .12);
+}
+
+@font-face { font-family: "Instrument Sans"; src: url(./instrument-sans.woff2) format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Fantasque Sans Mono"; src: url(./fantasque-sans-mono.woff2) format("woff2"); font-display: swap; }
+
+main { font: 400 15px/1.5 "Instrument Sans", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+main code, main pre, main tt, main textarea { font-family: "Fantasque Sans Mono", ui-monospace, Menlo, monospace; }
+
+main .gsc-comment-box, main .gsc-comment > div, main .gsc-replies, main .gsc-reply-box,
+main .gsc-comment-box-textarea, main .gsc-comment-box-preview, main .btn, main .gsc-social-reaction-summary-item,
+main .gsc-reactions-popover, main .gsc-direct-reactions-popover, main .gsc-comment-box-tabs button { border-radius: 0 !important; box-shadow: none !important; }
+main .gsc-comment-box { border: 1px solid var(--seg-rule); background: transparent; }
+main .gsc-comment-box-tabs { border-bottom: 1px solid var(--seg-rule); background: transparent; }
+main .gsc-comment-box-textarea { border: 0; background: var(--color-canvas-subtle); font-size: 14px; }
+main .gsc-comment-box-textarea:focus { outline: 2px solid var(--color-accent-fg); outline-offset: -2px; box-shadow: none; }
+main .gsc-comment > div { border: 0; border-top: 1px solid var(--seg-rule); background: transparent; }
+main .gsc-comment-header, main .gsc-comment-content, main .gsc-comment-footer { padding-inline: 0; }
+main .gsc-replies { border-top: 0; background: transparent; padding-left: 1.25rem; }
+main .gsc-reply-box { background: transparent; padding-inline: 0; }
+main .gsc-header, main .gsc-comments-count, main .gsc-comment-author, main .gsc-comment-edited, main time,
+main .gsc-comment-box-markdown-hint, main .gsc-reactions-count, main .link-secondary { font-family: "Fantasque Sans Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 400; }
+main .gsc-comment-author-avatar img, main .gsc-reply-author-avatar img, main .avatar { border-radius: 0 !important; }
+main .gsc-comment .markdown { font-size: 15px; }
+main .btn { font-weight: 500; }
+main .gsc-timeline { gap: 0; }

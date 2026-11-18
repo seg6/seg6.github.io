@@ -1,9 +1,50 @@
+---
+import { getCollection } from 'astro:content';
+import { buildHash, formatStamp } from '../lib/posts';
+
+const posts = await getCollection('posts');
+const updated = new Date(Math.max(...posts.map(post => post.data.date.getTime())));
+const build = buildHash();
+---
+
 <footer class="site-footer">
   <nav class="footer-links" aria-label="elsewhere">
-    <a href="mailto:hi@seg6.space">email</a>
+    <a href="mailto:hi@seg6.space">mail</a>
     <a href="https://github.com/seg6">github</a>
     <a href="https://x.com/_seg6">x</a>
     <a href="/posts/rss.xml">rss</a>
+    {Astro.url.pathname !== '/' && <a href="#top" class="back-to-top">↑ top</a>}
   </nav>
-  {Astro.url.pathname !== '/' && <a href="#top" class="back-to-top">back to top</a>}
+  <dl class="colophon">
+    <div>
+      <dt class="sr-only">location</dt>
+      <dd>52.5200 13.4050 <span class="colophon-gap">berlin, de</span></dd>
+    </div>
+    <div>
+      <dt class="sr-only">local time in berlin</dt>
+      <dd><time data-berlin-clock>--:--:--</time></dd>
+    </div>
+    {build && (
+      <div>
+        <dt>build</dt>
+        <dd>{build}</dd>
+      </div>
+    )}
+    <div>
+      <dt>updated</dt>
+      <dd>{formatStamp(updated)}</dd>
+    </div>
+  </dl>
 </footer>
+
+<script>
+  const clock = document.querySelector<HTMLTimeElement>('[data-berlin-clock]');
+  if (clock) {
+    const format = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    });
+    const update = () => { clock.textContent = format.format(new Date()); };
+    update();
+    setInterval(update, 1000);
+  }
+</script>

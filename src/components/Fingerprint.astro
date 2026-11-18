@@ -1,0 +1,16 @@
+---
+import { postShape } from '../lib/posts';
+
+interface Props {
+  body?: string;
+  width: number;
+  longest: number;
+}
+
+const { body, width, longest } = Astro.props;
+const scale = width / longest;
+---
+
+<span class="fp" aria-hidden="true">{postShape(body).map(([kind, lines]) => kind === 'h'
+  ? <i class="h"></i>
+  : <i class={kind === 'p' ? undefined : kind} style={`width:${Math.max(1, lines * scale).toFixed(1)}px`}></i>)}</span>

@@ -4,20 +4,25 @@ interface Props {
 }
 const { headings } = Astro.props;
 const filtered = headings.filter(h => h.depth <= 3);
+const top = Math.min(...filtered.map(h => h.depth));
+let section = 0;
+const items = filtered.map(h => ({
+  ...h,
+  level: h.depth - top,
+  number: h.depth === top ? String(++section).padStart(2, '0') : undefined,
+}));
 ---
 
-{filtered.length > 0 && (
+{items.length > 0 && (
   <aside class="toc-sidebar" aria-label="table of contents">
     <details class="toc-details">
-    <summary class="toc-title">on this page</summary>
+    <summary class="toc-title">contents</summary>
     <ul class="toc-list">
-      {filtered.map(h => (
-        <li>
-          <a
-            href={`#${h.slug}`}
-            class={`toc-h${h.depth}`}
-          >
-            {h.text}
+      {items.map(h => (
+        <li class={`toc-level-${Math.min(h.level, 2)}`}>
+          <a href={`#${h.slug}`}>
+            {h.number && <span class="toc-number" aria-hidden="true">{h.number}</span>}
+            <span>{h.text}</span>
           </a>
         </li>
       ))}
@@ -32,7 +37,7 @@ const filtered = headings.filter(h => h.depth <= 3);
     if (!toc || toc.dataset.ready === '1') return;
     toc.dataset.ready = '1';
     const disclosure = toc.querySelector<HTMLDetailsElement>('details');
-    const desktop = window.matchMedia('(min-width: 80rem)');
+    const desktop = window.matchMedia('(min-width: 72.5rem)');
     if (disclosure) {
       const updateDisclosure = () => { disclosure.open = desktop.matches; };
       updateDisclosure();

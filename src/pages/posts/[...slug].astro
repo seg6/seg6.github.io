@@ -1,17 +1,18 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
 import Post from '../../layouts/Post.astro';
-import { readingMinutes } from '../../lib/posts';
+import { getNumberedPosts, readingMinutes } from '../../lib/posts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts');
-  return posts.map(post => ({
+  const posts = await getNumberedPosts();
+  return posts.map((post, index) => ({
     params: { slug: post.id },
-    props: { post },
+    props: { post, newer: posts[index - 1], older: posts[index + 1] },
   }));
 }
 
-const { post } = Astro.props;
+const { post, newer, older } = Astro.props;
+const link = (entry?: typeof post) => entry && { href: `/posts/${entry.id}/`, title: entry.data.title, number: entry.number };
 const { Content, headings } = await render(post);
 
 function firstContentPreview(markdown: string) {
@@ -66,6 +67,9 @@ const socialImageAlt = post.data.imageAlt ?? contentPreview?.alt;
   toc={post.data.toc}
   mermaid={post.data.mermaid}
   comments={post.data.comments}
+  number={post.number}
+  newer={link(newer)}
+  older={link(older)}
 >
   <Content />
 </Post>

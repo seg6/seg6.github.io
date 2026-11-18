@@ -2,8 +2,9 @@
 import Base from './Base.astro';
 import Comments from '../components/Comments.astro';
 import TOC from '../components/TOC.astro';
-import ReadingProgress from '../components/ReadingProgress.astro';
 import { formatDate } from '../lib/posts';
+
+interface PostLink { href: string; title: string; number: string }
 
 interface Props {
   title: string;
@@ -16,6 +17,9 @@ interface Props {
   mermaid?: boolean;
   comments?: boolean;
   readingMinutes: number;
+  number: string;
+  newer?: PostLink;
+  older?: PostLink;
 }
 
 const {
@@ -28,7 +32,12 @@ const {
   toc,
   comments = true,
   readingMinutes,
+  number,
+  newer,
+  older,
 } = Astro.props;
+
+const topDepth = headings.length ? Math.min(...headings.map(h => h.depth)) : 0;
 
 ---
 
@@ -39,24 +48,39 @@ const {
   imageAlt={imageAlt}
   type="article"
 >
-  <ReadingProgress />
-  <main id="main-content" class="post-page">
+  <main id="main-content" class="post-page" data-minutes={readingMinutes}>
+    <div class="spine" data-spine aria-hidden="true"></div>
+
     <header class="post-header">
-      <a class="post-back" href="/posts/">back to all writing</a>
-      <div class="post-meta"><time datetime={date.toISOString()}>{formatDate(date)}</time><span>{readingMinutes} min read</span></div>
+      <div class="post-meta mono"><span>{number}</span><time datetime={date.toISOString()}>{formatDate(date)}</time><span>{readingMinutes} min</span></div>
       <h1 id="post-title">{title}</h1>
       <p>{description}</p>
     </header>
 
-    <div class="post-body-grid">
-      <article class="post-prose" aria-labelledby="post-title">
+    <aside class="post-side">
+      <p class="post-left" data-left aria-hidden="true"></p>
+      {toc && <TOC headings={headings} />}
+    </aside>
+
+    <div class="post-body">
+      <article class="post-prose" aria-labelledby="post-title" data-top={topDepth || undefined}>
         <slot />
       </article>
-      {toc && <TOC headings={headings} />}
-    </div>
 
-    <div class="post-content-wrapper comments-wrapper">
-      <div class="post-comments-wrapper">
+      {(newer || older) && (
+        <footer class="post-end">
+          <nav class="post-nav" aria-label="more writing">
+            {older ? (
+              <a href={older.href} rel="prev"><span class="post-nav-label">older</span><span class="post-nav-title">{older.title}</span></a>
+            ) : <span></span>}
+            {newer && (
+              <a href={newer.href} rel="next" class="post-nav-next"><span class="post-nav-label">newer</span><span class="post-nav-title">{newer.title}</span></a>
+            )}
+          </nav>
+        </footer>
+      )}
+
+      <div class="comments-wrapper">
         <Comments enabled={comments} />
       </div>
     </div>
@@ -142,8 +166,77 @@ const {
     });
   }
 
+  function initSpine() {
+    const spine = document.querySelector<HTMLElement>('[data-spine]');
+    const prose = document.querySelector<HTMLElement>('.post-prose');
+    const left = document.querySelector<HTMLElement>('[data-left]');
+    if (!spine || !prose) return;
+    const minutes = Number(document.querySelector<HTMLElement>('.post-page')?.dataset.minutes) || 1;
+    const top = prose.dataset.top;
+    const view = document.createElement('div');
+    view.className = 'spine-window';
+
+    const kind = (block: Element) => {
+      if (/^H[1-6]$/.test(block.tagName)) return block.tagName === `H${top}` ? 'h' : 's';
+      if (block.matches('pre.mermaid, figure, iframe, video') || block.querySelector(':scope > img, :scope > iframe')) return 'i';
+      if (block.matches('pre, .code-block-wrapper, .katex-display') || block.querySelector(':scope > .katex-display')) return 'c';
+      return '';
+    };
+
+    const mapHeight = () => Math.min(spine!.clientHeight, prose!.offsetHeight / 4);
+
+    function layout() {
+      const height = mapHeight();
+      if (!height) return;
+      const total = prose!.offsetHeight || 1;
+      const origin = prose!.getBoundingClientRect().top;
+      const marks = [...prose!.children].map(block => {
+        const box = block.getBoundingClientRect();
+        const mark = document.createElement('i');
+        const type = kind(block);
+        if (type) mark.className = type;
+        mark.style.top = `${Math.round(((box.top - origin) / total) * height)}px`;
+        mark.style.height = `${type === 'h' || type === 's' ? 1 : Math.max(1, Math.round((box.height / total) * height - 1.5))}px`;
+        return mark;
+      });
+      spine!.replaceChildren(...marks, view);
+      track();
+    }
+
+    function track() {
+      const box = prose!.getBoundingClientRect();
+      const total = box.height || 1;
+      const from = Math.min(1, Math.max(0, (80 - box.top) / total));
+      const to = Math.min(1, Math.max(0, (window.innerHeight - box.top) / total));
+      const height = mapHeight();
+      view.style.top = `${from * height - 3}px`;
+      view.style.height = `${Math.max(6, (to - from) * height + 6)}px`;
+      if (left) {
+        const remaining = Math.round(minutes * (1 - to));
+        left.innerHTML = to >= 1 ? '' : `<b>${remaining < 1 ? 'under a minute' : `${remaining} min`}</b> left`;
+      }
+    }
+
+    const scrub = (event: PointerEvent) => {
+      const box = spine.getBoundingClientRect();
+      const at = Math.min(1, Math.max(0, (event.clientY - box.top) / mapHeight()));
+      window.scrollTo({ top: prose.getBoundingClientRect().top + window.scrollY + at * prose.offsetHeight - window.innerHeight / 2, behavior: 'instant' });
+    };
+    let scrubbing = false;
+    spine.addEventListener('pointerdown', event => { scrubbing = true; spine.setPointerCapture(event.pointerId); scrub(event); });
+    spine.addEventListener('pointermove', event => { if (scrubbing) scrub(event); });
+    spine.addEventListener('pointerup', () => { scrubbing = false; });
+    spine.addEventListener('pointercancel', () => { scrubbing = false; });
+
+    window.addEventListener('scroll', track, { passive: true });
+    new ResizeObserver(layout).observe(prose);
+    window.addEventListener('resize', layout);
+    layout();
+  }
+
   initVideoDemos();
   initCodeBlocks();
   initMermaid();
+  initSpine();
 </script>
 </Base>
