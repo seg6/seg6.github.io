@@ -12,6 +12,7 @@ interface Props {
   image?: string;
   imageAlt?: string;
   type?: 'website' | 'article';
+  chrome?: boolean;
 }
 
 const {
@@ -21,6 +22,7 @@ const {
   image,
   imageAlt,
   type = 'website',
+  chrome = true,
 } = Astro.props;
 const fullTitle = title === 'seg6' ? 'seg6' : `${title} — seg6`;
 const siteUrl = Astro.site ?? Astro.url;
@@ -33,9 +35,10 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <Font cssVariable="--font-sans" preload />
-    <Font cssVariable="--font-mono" preload />
-    <Font cssVariable="--font-serif" preload={type === 'article' ? [{ weight: 400, style: 'normal' }] : false} />
+    <Font cssVariable="--font-sans" preload={chrome} />
+    <Font cssVariable="--font-pixel" preload={!chrome} />
+    <Font cssVariable="--font-serif" preload={!chrome || type === 'article' ? [{ weight: 400, style: 'normal' }] : false} />
+    <Font cssVariable="--font-mono" preload={chrome} />
     <meta name="description" content={description} />
     <title>{fullTitle}</title>
     <link rel="canonical" href={canonicalUrl} />
@@ -67,13 +70,18 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
   </head>
   <body id="top">
     <a class="skip-link" href="#main-content">skip to content</a>
-    <div class="site">
-      <Header />
-      <div class="content-frame">
-        <slot />
+    {!chrome && (
+      <button class="theme-toggle corner-toggle" type="button" aria-label="switch to dark theme" aria-pressed="false"><span data-theme-next>dark</span></button>
+    )}
+    {chrome ? (
+      <div class="site">
+        <Header />
+        <div class="content-frame">
+          <slot />
+        </div>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    ) : <slot />}
     <script defer src="https://static.seg6.space/a/s.js" is:inline></script>
     <script>
       const themeToggle = document.querySelector<HTMLButtonElement>('.theme-toggle');
@@ -90,6 +98,8 @@ const socialImage = image ? new URL(image, siteUrl) : undefined;
         const nextTheme = resolvedTheme() === 'dark' ? 'light' : 'dark';
         themeToggle.setAttribute('aria-pressed', String(resolvedTheme() === 'dark'));
         themeToggle.setAttribute('aria-label', `switch to ${nextTheme} theme`);
+        const label = themeToggle.querySelector('[data-theme-next]');
+        if (label) label.textContent = nextTheme;
       }
 
       themeToggle?.addEventListener('click', () => {

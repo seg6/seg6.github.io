@@ -16,15 +16,29 @@ export default defineConfig({
   trailingSlash: 'always',
   fonts: [
     {
-      name: 'DM Sans Variable',
+      name: 'Departure Mono',
+      cssVariable: '--font-pixel',
+      provider: fontProviders.local(),
+      display: 'block',
+      fallbacks: ['monospace'],
+      options: {
+        variants: [{
+          src: ['./src/assets/fonts/DepartureMono-Regular.woff2'],
+          weight: 400,
+          style: 'normal',
+        }],
+      },
+    },
+    {
+      name: 'Instrument Sans Variable',
       cssVariable: '--font-sans',
       provider: fontProviders.local(),
       display: 'block',
       fallbacks: ['sans-serif'],
       options: {
         variants: [{
-          src: ['@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2'],
-          weight: '100 1000',
+          src: ['@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2'],
+          weight: '400 700',
           style: 'normal',
         }],
       },

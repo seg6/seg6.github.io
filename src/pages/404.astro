@@ -1,11 +1,20 @@
 ---
 import Base from '../layouts/Base.astro';
+import Dither from '../components/Dither.astro';
 ---
 
 <Base title="404">
   <main id="main-content" class="signal-lost">
-    <h1 class="signal-lost-code">404</h1>
-    <div class="signal-lost-text">this page appears to be missing.</div>
-    <a href="/" class="signal-lost-link">← return home</a>
+    <figure class="home-figure">
+      <div class="crop-marks">
+        <Dither src="/img/cat.webp" alt="A black cat staring into the camera, with a loading spinner over its forehead" lightX={0.5} lightY={0.3} crop={[0.15, 0.08, 0.7]} />
+      </div>
+      <figcaption><span>fig. 404</span><span>still loading</span></figcaption>
+    </figure>
+    <div class="signal-lost-copy">
+      <h1 class="signal-lost-code">404</h1>
+      <p class="signal-lost-text">this page appears to be missing.</p>
+      <a href="/" class="signal-lost-link">← return home</a>
+    </div>
   </main>
 </Base>

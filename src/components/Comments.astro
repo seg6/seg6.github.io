@@ -14,6 +14,10 @@ const { enabled = true } = Astro.props;
 )}
 
 <script>
+  const themeUrl = (theme: string) => window.location.protocol === 'https:'
+    ? new URL(`/giscus/${theme}.css`, window.location.origin).href
+    : `noborder_${theme}`;
+
   function initComments() {
     document.querySelectorAll('.comments-embed').forEach((target) => {
       if (target.querySelector('script.giscus-script')) return;
@@ -36,7 +40,7 @@ const { enabled = true } = Astro.props;
         ? selectedTheme
         : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-      script.setAttribute('data-theme', theme);
+      script.setAttribute('data-theme', themeUrl(theme));
       script.setAttribute('data-lang', 'en');
       script.setAttribute('data-loading', 'eager');
       script.setAttribute('crossorigin', 'anonymous');
@@ -52,6 +56,6 @@ const { enabled = true } = Astro.props;
     if (!frame) return;
     const theme = event instanceof CustomEvent ? event.detail?.theme : undefined;
     if (theme !== 'light' && theme !== 'dark') return;
-    frame.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
+    frame.contentWindow?.postMessage({ giscus: { setConfig: { theme: themeUrl(theme) } } }, 'https://giscus.app');
   });
 </script>

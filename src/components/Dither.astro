@@ -1,0 +1,192 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  lightX?: number;
+  lightY?: number;
+  crop?: [number, number, number];
+}
+
+const { src, alt, lightX = 0.8, lightY = 0.3, crop = [0, 0, 1] } = Astro.props;
+---
+
+<div class="dither" data-dither data-light-x={lightX} data-light-y={lightY} data-crop={crop.join(',')}>
+  <img src={src} alt={alt} width="400" height="400" decoding="async" />
+  <canvas aria-hidden="true"></canvas>
+</div>
+
+<script>
+  const BAYER = [
+    0, 32, 8, 40, 2, 34, 10, 42,
+    48, 16, 56, 24, 50, 18, 58, 26,
+    12, 44, 4, 36, 14, 46, 6, 38,
+    60, 28, 52, 20, 62, 30, 54, 22,
+    3, 35, 11, 43, 1, 33, 9, 41,
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47, 7, 39, 13, 45, 5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21,
+  ].map(value => (value + 0.5) / 64);
+
+  const CELL = 2;
+  const EQUALISE = 0.6;
+  const SHARPEN = 1.5;
+  const SHARPEN_RADIUS = 3;
+
+  function parseColor(value: string): [number, number, number] {
+    const probe = document.createElement('canvas').getContext('2d');
+    if (!probe) return [0, 0, 0];
+    probe.fillStyle = value;
+    probe.fillRect(0, 0, 1, 1);
+    const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
+    return [r, g, b];
+  }
+
+  function blur(field: Float32Array, size: number, radius: number) {
+    const pass = (source: Float32Array, step: number, stride: number) => {
+      const out = new Float32Array(source.length);
+      for (let line = 0; line < size; line++) {
+        for (let at = 0; at < size; at++) {
+          let sum = 0;
+          let count = 0;
+          for (let k = Math.max(0, at - radius); k <= Math.min(size - 1, at + radius); k++) {
+            sum += source[line * stride + k * step];
+            count++;
+          }
+          out[line * stride + at * step] = sum / count;
+        }
+      }
+      return out;
+    };
+    return pass(pass(field, 1, size), size, 1);
+  }
+
+  function initDither(root: HTMLElement) {
+    const img = root.querySelector('img');
+    const canvas = root.querySelector('canvas');
+    const ctx = canvas?.getContext('2d');
+    if (!img || !canvas || !ctx) return;
+
+    const [cropX, cropY, cropSize] = (root.dataset.crop ?? '0,0,1').split(',').map(Number);
+    const home = { x: Number(root.dataset.lightX), y: Number(root.dataset.lightY) };
+    const light = { ...home };
+    const target = { ...home };
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    let size = 0;
+    let luminance = new Float32Array(0);
+    let frame: ImageData | undefined;
+    let lit: [number, number, number] = [255, 255, 255];
+    let unlit: [number, number, number] = [0, 0, 0];
+    let raf = 0;
+
+    function readTheme() {
+      const styles = getComputedStyle(root);
+      lit = parseColor(styles.getPropertyValue('--dither-lit'));
+      unlit = parseColor(styles.getPropertyValue('--dither-unlit'));
+    }
+
+    function sample() {
+      const next = Math.max(64, Math.floor(root.clientWidth / CELL));
+      if (next === size && luminance.length) return;
+      size = next;
+      canvas!.width = size;
+      canvas!.height = size;
+      canvas!.style.width = `${size * CELL}px`;
+      canvas!.style.height = `${size * CELL}px`;
+
+      const scratch = document.createElement('canvas');
+      scratch.width = size;
+      scratch.height = size;
+      const sctx = scratch.getContext('2d');
+      if (!sctx) return;
+      const side = img!.naturalWidth;
+      sctx.drawImage(img!, cropX * side, cropY * side, cropSize * side, cropSize * side, 0, 0, size, size);
+      const { data } = sctx.getImageData(0, 0, size, size);
+      luminance = new Float32Array(size * size);
+      for (let i = 0; i < luminance.length; i++) {
+        luminance[i] = (0.2126 * data[i * 4] + 0.7152 * data[i * 4 + 1] + 0.0722 * data[i * 4 + 2]) / 255;
+      }
+      const soft = blur(luminance, size, SHARPEN_RADIUS);
+      const histogram = new Float32Array(256);
+      for (let i = 0; i < luminance.length; i++) {
+        luminance[i] = Math.min(1, Math.max(0, luminance[i] + (luminance[i] - soft[i]) * SHARPEN));
+        histogram[Math.round(luminance[i] * 255)]++;
+      }
+      for (let level = 1; level < 256; level++) histogram[level] += histogram[level - 1];
+      for (let i = 0; i < luminance.length; i++) {
+        const equalised = histogram[Math.round(luminance[i] * 255)] / luminance.length;
+        luminance[i] += (equalised - luminance[i]) * EQUALISE;
+      }
+      frame = ctx!.createImageData(size, size);
+    }
+
+    function draw() {
+      if (!frame) return;
+      const out = frame.data;
+      const lx = light.x * size;
+      const ly = light.y * size;
+      const radius = size * 0.55;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const i = y * size + x;
+          const dx = x - lx;
+          const dy = y - ly;
+          const glow = Math.exp(-(dx * dx + dy * dy) / (radius * radius));
+          const value = luminance[i] + glow * 0.18 - 0.04;
+          const color = value > BAYER[(y & 7) * 8 + (x & 7)] ? lit : unlit;
+          out[i * 4] = color[0];
+          out[i * 4 + 1] = color[1];
+          out[i * 4 + 2] = color[2];
+          out[i * 4 + 3] = 255;
+        }
+      }
+      ctx!.putImageData(frame, 0, 0);
+      root.dataset.ready = '';
+    }
+
+    function tick() {
+      raf = 0;
+      const ease = reduceMotion.matches ? 1 : 0.14;
+      light.x += (target.x - light.x) * ease;
+      light.y += (target.y - light.y) * ease;
+      draw();
+      if (Math.abs(target.x - light.x) + Math.abs(target.y - light.y) > 0.002) schedule();
+    }
+
+    function schedule() {
+      if (!raf) raf = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      readTheme();
+      sample();
+      draw();
+
+      root.addEventListener('pointermove', event => {
+        const box = canvas!.getBoundingClientRect();
+        target.x = (event.clientX - box.left) / box.width;
+        target.y = (event.clientY - box.top) / box.height;
+        schedule();
+      });
+      root.addEventListener('pointerleave', () => {
+        target.x = home.x;
+        target.y = home.y;
+        schedule();
+      });
+      document.addEventListener('theme:changed', () => {
+        readTheme();
+        draw();
+      });
+      new ResizeObserver(() => {
+        const before = size;
+        sample();
+        if (size !== before) draw();
+      }).observe(root);
+    }
+
+    if (img.complete && img.naturalWidth) start();
+    else img.addEventListener('load', start, { once: true });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-dither]').forEach(initDither);
+</script>

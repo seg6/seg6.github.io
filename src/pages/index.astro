@@ -1,35 +1,54 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getCollection } from 'astro:content';
-import { formatDate } from '../lib/posts';
+import SceneMeta from '../components/SceneMeta.astro';
+import { formatMonth, getNumberedPosts } from '../lib/posts';
 
-const posts = (await getCollection('posts')).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
-const recent = posts.slice(0, 6);
+const posts = await getNumberedPosts();
+const recent = posts.slice(0, 5);
 ---
 
-<Base title="seg6" class="home-layout">
-  <main id="main-content" class="home-page">
-    <section class="home-intro" aria-labelledby="home-title">
-      <h1 id="home-title" class="sr-only">seg6</h1>
-      <p>software engineer based in berlin. currently @ meyer sound. notes on systems, internals, and the occasional hack.</p>
-      <img src="/img/elma.webp" alt="Elma, a grey cat lying in the sun" width="400" height="400" />
-    </section>
+<Base title="seg6" class="scene-layout" chrome={false}>
+  <canvas class="scene" data-scene aria-hidden="true"></canvas>
+  <main id="main-content" class="scene-page">
+    <div class="scene-id">
+      <h1><span class="block">seg6</span></h1>
+      <p class="scene-bio"><span class="block">software engineer based in berlin, currently @ meyersound.</span><br /><span class="block">notes on systems, internals, and the occasional hack.</span></p>
 
-    <section class="home-writing" aria-labelledby="latest-writing">
-      <div class="section-heading">
-        <h2 id="latest-writing">writing</h2>
-        <a href="/posts/">all posts ({posts.length})</a>
-      </div>
-      <div class="home-posts">
+      <nav class="scene-nav scene-posts" aria-labelledby="scene-writing">
+        <h2 class="scene-label" id="scene-writing"><span class="block">writing</span></h2>
         {recent.map(post => (
-          <a class="home-post" href={`/posts/${post.id}/`}>
-            <h3>{post.data.title}</h3>
-            <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
-          </a>
+          <a href={`/posts/${post.id}/`}><span class="block">{post.data.title}</span><time datetime={post.data.date.toISOString()}>{formatMonth(post.data.date)}</time></a>
         ))}
-      </div>
-    </section>
+        <a href="/posts/"><span class="block">all {posts.length} entries →</span></a>
+      </nav>
+
+      <nav class="scene-nav" aria-labelledby="scene-more">
+        <h2 class="scene-label" id="scene-more"><span class="block">more</span></h2>
+        <a href="/projects/"><span class="block">projects →</span></a>
+      </nav>
+    </div>
+
+    <nav class="scene-links" aria-label="elsewhere">
+      <a href="mailto:hi@seg6.space"><span class="block">mail</span></a>
+      <a href="https://github.com/seg6"><span class="block">github</span></a>
+      <a href="https://x.com/_seg6"><span class="block">x</span></a>
+      <a href="/posts/rss.xml"><span class="block">rss</span></a>
+    </nav>
+
+    <SceneMeta />
   </main>
 </Base>
+
+<script>
+  import { initScenePage } from '../scripts/scene-page';
+
+  const boat = ['...1...', '..11...', '.111...', '...1...', '1111111', '.11111.'];
+
+  const narrow = window.matchMedia('(max-width: 44rem)').matches;
+
+  initScenePage({
+    horizon: narrow ? 0.33 : 0.64,
+    skyline: true,
+    sprites: [{ x: 0.42, depth: 0.1, bitmap: boat, phase: 0, speed: 0.0035 }],
+  });
+</script>

@@ -1,35 +1,207 @@
 ---
 import Base from '../layouts/Base.astro';
+import Footer from '../components/Footer.astro';
+import versions from '../../public/wasm/versions.json';
 
-const projects = [
-  { name: 'surf', desc: 'remote chromium browser for legacy ios devices', tags: ['objective-c', 'ios'], url: 'https://github.com/seg6/surf' },
-  { name: 'byte', desc: '6502 based fantasy console', tags: ['rust', 'emulator'], url: 'https://github.com/seg6/byte' },
-  { name: 'mmproxy-rs', desc: 'rust implementation of tcp + udp proxy protocol', tags: ['rust', 'networking'], url: 'https://github.com/saiko-tech/mmproxy-rs' },
-  { name: 'async-fred-session', desc: 'redis backed session store for async-session using fred.rs', tags: ['rust', 'async'], url: 'https://github.com/seg6/async-fred-session' },
-  { name: 'slmp', desc: 'slmp client library for c#', tags: ['c#', 'industrial'], url: 'https://github.com/seg6/SLMP' },
-  { name: 'pox', desc: 'lox ast-walking interpreter', tags: ['python', 'language'], url: 'https://github.com/seg6/pox' },
-  { name: 'arche', desc: 'state management for pygame', tags: ['python', 'gamedev'], url: 'https://github.com/seg6/arche' },
-  { name: 'raytracer', desc: 'pure c99 raytracer', tags: ['c', 'graphics'], url: 'https://github.com/seg6/raytracer' },
+const commit = (repo: keyof typeof versions) => `https://github.com/seg6/${repo}/tree/${versions[repo]}`;
+
+const rest = [
+  { name: 'surf', desc: 'remote chromium browser for legacy ios devices', more: 'chromium runs on your computer, the old ipad just shows it.', tags: ['objective-c', 'ios'], url: 'https://github.com/seg6/surf', post: '/posts/resurrecting-ipad-mini/' },
+  { name: 'mmproxy-rs', desc: 'rust implementation of tcp + udp proxy protocol', more: 'gives a server behind a load balancer the real client address.', tags: ['rust', 'networking'], url: 'https://github.com/saiko-tech/mmproxy-rs' },
+  { name: 'async-fred-session', desc: 'redis backed session store for async-session using fred.rs', more: '', tags: ['rust', 'async'], url: 'https://github.com/seg6/async-fred-session' },
+  { name: 'slmp', desc: 'slmp client library for c#', more: 'read and write registers on mitsubishi plcs over ethernet.', tags: ['c#', 'industrial'], url: 'https://github.com/seg6/SLMP' },
+  { name: 'arche', desc: 'state management for pygame', more: 'a stack of states you push, pop and swap.', tags: ['python', 'gamedev'], url: 'https://github.com/seg6/arche' },
 ];
 ---
 
-<Base title="projects" description="small tools, experiments, and things I've put together.">
-  <main id="main-content" class="index-page projects-page">
-    <header class="page-intro">
-      <h1>projects</h1>
-      <p>small tools, experiments, and the rest.</p>
-    </header>
+<Base title="projects" description="small tools, experiments, and things I've put together." chrome={false} class="hero-layout">
+  <section class="hero" aria-labelledby="projects-title">
+    <div class="hero-view">
+      <canvas class="hero-scene" data-tracer role="img" aria-label="three spheres on a white floor, ray traced live and dithered to two colours"></canvas>
+      <div class="hero-id">
+        <p class="hero-home"><a href="/">seg6</a></p>
+        <h1 id="projects-title">projects</h1>
+        <p>small tools, experiments, and things I've put together.</p>
+        <nav aria-label="on this page">
+          <a href="#byte">byte ↓</a>
+          <a href="#pox">pox ↓</a>
+          <a href="#rest">the rest ↓</a>
+          <a href="/posts/">writing →</a>
+        </nav>
+      </div>
+      <div class="hero-card">
+        <h2><a href={commit('raytracer')} target="_blank" rel="noopener noreferrer">raytracer ↗︎</a></h2>
+        <p>pure c99 raytracer. it is drawing this picture.</p>
+        <p class="mono" data-tracer-stats>starting</p>
+        <p class="mono">drag to look around, or drag a sphere</p>
+        <div class="controls">
+          <button type="button" data-tracer-dither aria-pressed="false">dither</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <div class="registry-grid">
-      {projects.map(project => (
-        <a href={project.url} target="_blank" rel="noopener noreferrer" class="registry-card">
-          <div class="card-copy">
-            <h2 class="card-name">{project.name}</h2>
-            <p class="card-desc">{project.desc}</p>
-          </div>
-          <span class="card-tags">{project.tags.join(' / ')}</span>
-        </a>
+  <div class="site">
+  <main id="main-content">
+    <section class="stage" id="byte" aria-labelledby="byte-name">
+      <div class="stage-live stage-byte">
+        <canvas class="screen-byte" data-byte-screen width="64" height="64" role="img" aria-label="the console's 64 by 64 pixel display, showing a slowly shifting plasma of coloured bands"></canvas>
+        <pre class="listing mono" data-byte-listing aria-label="the program, with the instruction about to run highlighted"></pre>
+      </div>
+      <div class="stage-info">
+        <h2 id="byte-name">byte</h2>
+        <p>6502 based fantasy console</p>
+        <div class="controls">
+          <button type="button" data-byte-run aria-pressed="true">run</button>
+          <button type="button" data-byte-slow aria-pressed="false">slow</button>
+          <button type="button" data-byte-step>step</button>
+        </div>
+        <div class="registers mono" data-byte-registers></div>
+        <dl class="facts mono">
+          <div><dt>running</dt><dd>the cpu core, as wasm</dd></div>
+          <div><dt>program</dt><dd>a plasma, in 6502 assembly</dd></div>
+        </dl>
+        <div class="stage-foot mono"><span>rust</span><span>emulator</span><a href={commit('byte')} target="_blank" rel="noopener noreferrer">source @ {versions.byte.slice(0, 7)} ↗︎</a></div>
+      </div>
+    </section>
+
+    <section class="stage" id="pox" aria-labelledby="pox-name">
+      <div class="stage-live stage-pox">
+        <textarea class="editor mono" data-pox-source spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="pox source">println("hello");</textarea>
+        <div class="output">
+          <pre class="mono" data-pox-out aria-live="polite"></pre>
+          <canvas data-pox-picture hidden></canvas>
+        </div>
+      </div>
+      <div class="stage-info">
+        <h2 id="pox-name">pox</h2>
+        <p>lox ast-walking interpreter</p>
+        <div class="controls">
+          <button type="button" data-pox-run>run</button>
+          <button type="button" data-pox-stop disabled>stop</button>
+        </div>
+        <div class="controls" data-pox-examples aria-label="examples"></div>
+        <dl class="facts mono">
+          <div><dt>running</dt><dd>pox, on python as wasm</dd></div>
+          <div><dt>status</dt><dd data-pox-status>idle</dd></div>
+        </dl>
+        <div class="stage-foot mono"><span>python</span><span>language</span><a href={commit('pox')} target="_blank" rel="noopener noreferrer">source @ {versions.pox.slice(0, 7)} ↗︎</a></div>
+      </div>
+    </section>
+
+    <div class="project-rows" id="rest">
+      {rest.map(project => (
+        <div class="project-row">
+          <h2><a href={project.url} target="_blank" rel="noopener noreferrer">{project.name}</a></h2>
+          <div class="project-about"><p>{project.desc}</p>{project.more && <p>{project.more}</p>}</div>
+          <span class="mono">{project.tags.join(', ')}</span>
+          <span class="project-links mono">
+            {project.post && <a href={project.post}>write-up</a>}
+            <a href={project.url} target="_blank" rel="noopener noreferrer">source ↗︎</a>
+          </span>
+        </div>
       ))}
     </div>
   </main>
+  <Footer />
+  </div>
 </Base>
+
+<script>
+  import { createByte } from '../scripts/byte';
+  import { createPox, parsePpm } from '../scripts/pox';
+  import { createTracer } from '../scripts/tracer';
+
+  const find = <T extends HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
+
+  const stats = find('[data-tracer-stats]');
+  const dither = find<HTMLButtonElement>('[data-tracer-dither]');
+  createTracer(find<HTMLCanvasElement>('[data-tracer]'), {
+    onFrame: ({ width, height, ms }) => { stats.textContent = `${width}×${height} rays in ${ms.toFixed(0)} ms`; },
+  }).then(tracer => {
+    dither.addEventListener('click', () => {
+      const on = dither.getAttribute('aria-pressed') !== 'true';
+      dither.setAttribute('aria-pressed', String(on));
+      tracer.setDither(on);
+    });
+  }).catch(() => { stats.textContent = 'could not load raytracer.wasm'; });
+
+  createByte({
+    screen: find<HTMLCanvasElement>('[data-byte-screen]'),
+    registers: find('[data-byte-registers]'),
+    listing: find('[data-byte-listing]'),
+    run: find<HTMLButtonElement>('[data-byte-run]'),
+    slow: find<HTMLButtonElement>('[data-byte-slow]'),
+    step: find<HTMLButtonElement>('[data-byte-step]'),
+  }).catch(() => { find('[data-byte-registers]').textContent = 'could not load byte.wasm'; });
+
+  const source = find<HTMLTextAreaElement>('[data-pox-source]');
+  const out = find('[data-pox-out]');
+  const picture = find<HTMLCanvasElement>('[data-pox-picture]');
+  const status = find('[data-pox-status]');
+  const runButton = find<HTMLButtonElement>('[data-pox-run]');
+  const stopButton = find<HTMLButtonElement>('[data-pox-stop]');
+  const examples = find('[data-pox-examples]');
+  const pox = createPox();
+  const KEEP = 20000;
+
+  let clock = 0;
+  const setBusy = (busy: boolean) => { runButton.disabled = busy; stopButton.disabled = !busy; };
+  function run() {
+    if (pox.busy) return;
+    let all = '';
+    out.textContent = '';
+    out.hidden = false;
+    picture.hidden = true;
+    setBusy(true);
+    const started = performance.now();
+    let phase = '';
+    const tick = () => { status.textContent = `${phase}, ${((performance.now() - started) / 1000).toFixed(1)} s`; };
+    clock = window.setInterval(tick, 100);
+    pox.run(source.value, {
+      onStatus: text => { phase = text; tick(); },
+      onOutput: text => {
+        all += text;
+        if (all.startsWith('P3')) return;
+        out.textContent = all.length > KEEP ? `…\n${all.slice(-KEEP)}` : all;
+        out.scrollTop = out.scrollHeight;
+      },
+      onDone: ms => {
+        clearInterval(clock);
+        setBusy(false);
+        const image = parsePpm(all);
+        if (image) {
+          picture.width = image.width;
+          picture.height = image.height;
+          picture.getContext('2d')!.putImageData(image, 0, 0);
+          picture.hidden = false;
+          out.hidden = true;
+        }
+        status.textContent = `done in ${(ms / 1000).toFixed(ms < 100 ? 3 : 1)} s${image ? `, printed a ${image.width}×${image.height} ppm` : ''}`;
+      },
+    });
+  }
+  runButton.addEventListener('click', run);
+  stopButton.addEventListener('click', () => { pox.stop(); clearInterval(clock); setBusy(false); status.textContent = 'stopped'; });
+  source.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); run(); }
+    if (event.key === 'Tab') { event.preventDefault(); source.setRangeText('    ', source.selectionStart, source.selectionEnd, 'end'); }
+  });
+
+  fetch('/wasm/pox.json').then(response => response.json()).then(({ examples: programs }: { examples: Record<string, string> }) => {
+    const buttons = Object.keys(programs).map(name => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = name;
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', () => {
+        source.value = name === 'raytracer' ? programs[name].replace('canvas_width = 800', 'canvas_width = 160') : programs[name];
+        source.scrollTop = 0;
+        buttons.forEach(other => other.setAttribute('aria-pressed', String(other === button)));
+      });
+      examples.append(button);
+      return button;
+    });
+    buttons.find(button => button.textContent === 'closure')?.click();
+  });
+</script>

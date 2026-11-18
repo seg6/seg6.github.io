@@ -1,0 +1,46 @@
+@import url("https://giscus.app/themes/noborder_dark.css");
+
+main {
+  --seg-rule: #242725;
+  --primary-default: 147, 164, 255;
+  --bg-default: 24, 27, 25;
+  --color-btn-text: #e7e9e5;
+  --color-btn-primary-text: #0f1110;
+  --color-btn-primary-disabled-text: #0f1110;
+  --color-fg-default: #e7e9e5;
+  --color-fg-muted: #858a85;
+  --color-fg-subtle: #4a4e4a;
+  --color-canvas-default: #0f1110;
+  --color-canvas-overlay: #181b19;
+  --color-border-default: #242725;
+  --color-border-muted: #242725;
+  --color-neutral-muted: #242725;
+  --color-segmented-control-bg: #181b19;
+  --color-segmented-control-button-bg: #0f1110;
+  --color-scale-gray-1: #181b19;
+  --color-scale-blue-1: rgba(147, 164, 255, .16);
+}
+
+@font-face { font-family: "Instrument Sans"; src: url(./instrument-sans.woff2) format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Fantasque Sans Mono"; src: url(./fantasque-sans-mono.woff2) format("woff2"); font-display: swap; }
+
+main { font: 400 15px/1.5 "Instrument Sans", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+main code, main pre, main tt, main textarea { font-family: "Fantasque Sans Mono", ui-monospace, Menlo, monospace; }
+
+main .gsc-comment-box, main .gsc-comment > div, main .gsc-replies, main .gsc-reply-box,
+main .gsc-comment-box-textarea, main .gsc-comment-box-preview, main .btn, main .gsc-social-reaction-summary-item,
+main .gsc-reactions-popover, main .gsc-direct-reactions-popover, main .gsc-comment-box-tabs button { border-radius: 0 !important; box-shadow: none !important; }
+main .gsc-comment-box { border: 1px solid var(--seg-rule); background: transparent; }
+main .gsc-comment-box-tabs { border-bottom: 1px solid var(--seg-rule); background: transparent; }
+main .gsc-comment-box-textarea { border: 0; background: var(--color-canvas-subtle); font-size: 14px; }
+main .gsc-comment-box-textarea:focus { outline: 2px solid var(--color-accent-fg); outline-offset: -2px; box-shadow: none; }
+main .gsc-comment > div { border: 0; border-top: 1px solid var(--seg-rule); background: transparent; }
+main .gsc-comment-header, main .gsc-comment-content, main .gsc-comment-footer { padding-inline: 0; }
+main .gsc-replies { border-top: 0; background: transparent; padding-left: 1.25rem; }
+main .gsc-reply-box { background: transparent; padding-inline: 0; }
+main .gsc-header, main .gsc-comments-count, main .gsc-comment-author, main .gsc-comment-edited, main time,
+main .gsc-comment-box-markdown-hint, main .gsc-reactions-count, main .link-secondary { font-family: "Fantasque Sans Mono", ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 400; }
+main .gsc-comment-author-avatar img, main .gsc-reply-author-avatar img, main .avatar { border-radius: 0 !important; }
+main .gsc-comment .markdown { font-size: 15px; }
+main .btn { font-weight: 500; }
+main .gsc-timeline { gap: 0; }
